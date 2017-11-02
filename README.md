@@ -21,3 +21,11 @@ Next level could start with two pizzas and one kid, simple as the first level, j
 
 Now that we're almost losing our ~~client~~ user, we add the knife. But initially it will be an ordinary knife that cuts each pizza into 2 equal pieces.
 If there are more pizzas than kids, you can distribute pizza to kids. Cut only the remaining pizza.
+
+Correction: perhaps each swipe down should distribute one pizza part to each of the kids. If we have 6 pizza parts and 5 kids, it would be too much to ask the user to swipe down 5 times to give the first 5 parts to the kids. Better to swipe once and have the animation and sound effects repeat for each pizza part and have a satisfying chomping sound when each kid gets his pizza part to eat.
+
+I want to use phaser to create this game.
+https://gamedevacademy.org/wp-content/uploads/2016/08/Game-Development-for-Human-Beings-ebook.pdf
+
+Mistakes should cause a quick animation with some humor showing that some kids got more than others. maybe they should fight over the pieces?
+Quickly restarting the level.
