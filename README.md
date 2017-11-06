@@ -29,3 +29,5 @@ https://gamedevacademy.org/wp-content/uploads/2016/08/Game-Development-for-Human
 
 Mistakes should cause a quick animation with some humor showing that some kids got more than others. maybe they should fight over the pieces?
 Quickly restarting the level.
+
+initial game scene should be up and running soon. Make pizza a square in yellow and the kids, pacman figures.
