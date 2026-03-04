@@ -1,0 +1,22 @@
+{
+  "name": "Pizza Math",
+  "short_name": "PizzaMath",
+  "description": "Learn division by sharing pizza with hungry mice!",
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFF8F0",
+  "theme_color": "#FFF3E0",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='32' fill='%23FFD54F'/><rect x='36' y='36' width='120' height='120' rx='16' fill='%23F4A83D'/><circle cx='72' cy='72' r='12' fill='%23C62828'/><circle cx='120' cy='84' r='10' fill='%23C62828'/><circle cx='84' cy='120' r='11' fill='%23C62828'/><circle cx='114' cy='132' r='9' fill='%23C62828'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='80' fill='%23FFD54F'/><rect x='96' y='96' width='320' height='320' rx='40' fill='%23F4A83D'/><circle cx='192' cy='192' r='32' fill='%23C62828'/><circle cx='320' cy='224' r='28' fill='%23C62828'/><circle cx='224' cy='320' r='30' fill='%23C62828'/><circle cx='304' cy='352' r='24' fill='%23C62828'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#FFF3E0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>Pizza Math</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="game">
+    <header id="header">
+      <span id="level-label">Level 1</span>
+      <span id="pizza-count">&#127829; × 1</span>
+    </header>
+    <div id="play-area">
+      <div id="knife-zone">
+        <div id="knife">
+          <div class="knife-blade"></div>
+          <div class="knife-handle"></div>
+        </div>
+      </div>
+      <div id="pizza-area"></div>
+    </div>
+    <div id="mouse-tray"></div>
+    <div id="celebration" class="hidden">
+      <div class="celebration-text">Level Complete!</div>
+      <div class="celebration-sub">Tap to continue</div>
+    </div>
+  </div>
+
+  <script src="levels.js"></script>
+  <script src="render.js"></script>
+  <script src="input.js"></script>
+  <script src="game.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+</body>
+</html>
