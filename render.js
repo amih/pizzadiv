@@ -131,6 +131,27 @@ const Render = {
           mouse.style.gridColumn = '1 / 4';
           mouse.style.justifySelf = 'center';
         }
+      } else if (state.mice === 10) {
+        // Triangle: rows of 1, 2, 3, 4 on a 4-col grid
+        // Row 1 (i=0): 1 mouse centered across 4 cols
+        // Row 2 (i=1,2): 2 mice centered (cols 2-3)
+        // Row 3 (i=3,4,5): 3 mice centered (cols 1-2, 2-3, 3-4) — use col 1,2,3 + span trick
+        // Row 4 (i=6,7,8,9): 4 mice filling all cols
+        const tri = [
+          { col: '1 / 5', row: '1' },   // centered across all 4
+          { col: '2', row: '2' },
+          { col: '3', row: '2' },
+          { col: '1 / 3', row: '3' },
+          { col: '2 / 4', row: '3' },
+          { col: '3 / 5', row: '3' },
+          { col: '1', row: '4' },
+          { col: '2', row: '4' },
+          { col: '3', row: '4' },
+          { col: '4', row: '4' },
+        ];
+        mouse.style.gridColumn = tri[i].col;
+        mouse.style.gridRow = tri[i].row;
+        mouse.style.justifySelf = 'center';
       }
 
       this.mouseTray.appendChild(mouse);
@@ -175,9 +196,9 @@ const Render = {
   animateDistributeRound(state, toDistribute, isPartial, onMunch) {
     return new Promise((resolve) => {
       const mouseEls = this.mouseTray.querySelectorAll('.mouse');
-      const pizzaEls = Array.from(this.pizzaArea.querySelectorAll('.pizza'));
-      const sliceEls = Array.from(this.pizzaArea.querySelectorAll('.slice'));
-      const bitEls = Array.from(this.pizzaArea.querySelectorAll('.bit'));
+      const pizzaEls = Array.from(this.pizzaArea.querySelectorAll('.pizza:not(.distributed)'));
+      const sliceEls = Array.from(this.pizzaArea.querySelectorAll('.slice:not(.distributed)'));
+      const bitEls = Array.from(this.pizzaArea.querySelectorAll('.bit:not(.distributed)'));
       const allPieces = [...pizzaEls, ...sliceEls, ...bitEls];
 
       let animated = 0;
@@ -206,13 +227,11 @@ const Render = {
             animated++;
             if (animated === toDistribute) {
               setTimeout(() => {
-                // Remove distributed pieces from DOM (don't full redraw)
-                allPieces.slice(0, toDistribute).forEach((p) => p.remove());
-                // Clean up empty groups
-                this.pizzaArea.querySelectorAll('.slice-group, .bit-group').forEach((g) => {
-                  if (g.children.length === 0) g.remove();
+                // Mark distributed pieces — keep in DOM to prevent reflow
+                allPieces.slice(0, toDistribute).forEach((p) => {
+                  p.classList.add('distributed');
+                  p.style.pointerEvents = 'none';
                 });
-                // Update header only
                 this.updateHeader(state);
                 resolve();
               }, 200);

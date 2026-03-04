@@ -424,6 +424,11 @@ body {
   position: relative;
 }
 
+/* Distributed pieces stay in layout but invisible */
+.distributed {
+  visibility: hidden;
+}
+
 /* Mouse tray */
 #mouse-tray {
   min-height: 20%;
@@ -478,7 +483,7 @@ body {
 }
 
 #mouse-tray[data-count="10"] {
-  grid-template-columns: repeat(5, auto);
+  grid-template-columns: repeat(4, auto);
 }
 
 /* Queued distribute — subtle mouse nudge */
