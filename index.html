@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=1.8.0">
+  <link rel="stylesheet" href="style.css?v=1.8.1">
 </head>
 <body>
   <div id="app">
@@ -79,12 +79,12 @@
     </div>
   </div>
 
-  <script src="version.js?v=1.8.0"></script>
-  <script src="sound.js?v=1.8.0"></script>
-  <script src="levels.js?v=1.8.0"></script>
-  <script src="render.js?v=1.8.0"></script>
-  <script src="input.js?v=1.8.0"></script>
-  <script src="game.js?v=1.8.0"></script>
+  <script src="version.js?v=1.8.1"></script>
+  <script src="sound.js?v=1.8.1"></script>
+  <script src="levels.js?v=1.8.1"></script>
+  <script src="render.js?v=1.8.1"></script>
+  <script src="input.js?v=1.8.1"></script>
+  <script src="game.js?v=1.8.1"></script>
   <script>
     console.log('Pizza Div v' + APP_VERSION);
     document.getElementById('version-label').textContent = 'Version ' + APP_VERSION;
@@ -174,16 +174,25 @@
         await Promise.all(regs.map((r) => r.unregister()));
       }
       sessionStorage.setItem('showUpdated', '1');
+      sessionStorage.setItem('prevVersion', APP_VERSION);
       window.location.reload(true);
     });
 
     // After update: show settings page with new version, then auto-navigate back
     if (sessionStorage.getItem('showUpdated')) {
+      const prevVersion = sessionStorage.getItem('prevVersion');
       sessionStorage.removeItem('showUpdated');
+      sessionStorage.removeItem('prevVersion');
       showPage('settings-page');
-      document.getElementById('version-label').textContent = 'Updated to Version ' + APP_VERSION + ' ✓';
-      document.getElementById('version-label').style.color = '#4CAF50';
-      document.getElementById('version-label').style.fontSize = '1.1rem';
+      if (prevVersion && prevVersion === APP_VERSION) {
+        document.getElementById('version-label').textContent = "You're on the latest version already.";
+        document.getElementById('version-label').style.color = '#888';
+        document.getElementById('version-label').style.fontSize = '1.1rem';
+      } else {
+        document.getElementById('version-label').textContent = 'Updated to Version ' + APP_VERSION + ' \u2713';
+        document.getElementById('version-label').style.color = '#4CAF50';
+        document.getElementById('version-label').style.fontSize = '1.1rem';
+      }
       setTimeout(() => {
         document.getElementById('version-label').style.color = '';
         document.getElementById('version-label').style.fontSize = '';

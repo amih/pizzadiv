@@ -562,6 +562,12 @@ body {
 
 #mouse-tray[data-count="10"] {
   grid-template-columns: repeat(4, auto);
+  gap: 4px;
+  padding: 8px 12px;
+}
+
+#mouse-tray[data-count="10"] .mouse {
+  transform: scale(0.8);
 }
 
 /* Queued distribute — subtle mouse nudge */
