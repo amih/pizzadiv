@@ -78,6 +78,16 @@
     console.log('Pizza Math v' + APP_VERSION);
     document.getElementById('version-label').textContent = 'Version ' + APP_VERSION;
 
+    // Go fullscreen on first tap (mobile browsers)
+    document.addEventListener('click', function goFS() {
+      const el = document.documentElement;
+      const rfs = el.requestFullscreen || el.webkitRequestFullscreen;
+      if (rfs && !document.fullscreenElement && !document.webkitFullscreenElement) {
+        rfs.call(el).catch(() => {});
+      }
+      document.removeEventListener('click', goFS);
+    });
+
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').then((reg) => {
         reg.update();
