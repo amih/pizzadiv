@@ -4,6 +4,7 @@ const Render = {
   levelLabel: document.getElementById('level-label'),
   pizzaCount: document.getElementById('pizza-count'),
   celebration: document.getElementById('celebration'),
+  failure: document.getElementById('failure'),
   knife: document.getElementById('knife'),
 
   drawState(state) {
@@ -104,7 +105,7 @@ const Render = {
     });
   },
 
-  animateDistribute(state, piecesUsed, startFedIndex) {
+  animateDistribute(state, piecesUsed, startFedIndex, onMunch) {
     return new Promise((resolve) => {
       const mouseEls = this.mouseTray.querySelectorAll('.mouse');
       const pizzaEls = Array.from(this.pizzaArea.querySelectorAll('.pizza'));
@@ -131,6 +132,7 @@ const Render = {
 
           setTimeout(() => {
             mouseEl.classList.add('fed', 'eating');
+            if (onMunch) onMunch();
             setTimeout(() => mouseEl.classList.remove('eating'), 400);
 
             animated++;
@@ -159,8 +161,34 @@ const Render = {
   hideCelebration() {
     this.celebration.classList.remove('visible');
     this.celebration.classList.add('hidden');
-    // Remove confetti
     document.querySelectorAll('.confetti').forEach((c) => c.remove());
+  },
+
+  showFailure() {
+    // Make unfed mice cry
+    const mice = this.mouseTray.querySelectorAll('.mouse:not(.fed)');
+    mice.forEach((m) => {
+      m.classList.add('crying');
+      const body = m.querySelector('.mouse-body');
+      const tearL = document.createElement('div');
+      tearL.className = 'mouse-tear left';
+      const tearR = document.createElement('div');
+      tearR.className = 'mouse-tear right';
+      body.appendChild(tearL);
+      body.appendChild(tearR);
+    });
+
+    // Show overlay after a short delay so crying is visible first
+    setTimeout(() => {
+      this.failure.classList.remove('hidden');
+      void this.failure.offsetWidth;
+      this.failure.classList.add('visible');
+    }, 800);
+  },
+
+  hideFailure() {
+    this.failure.classList.remove('visible');
+    this.failure.classList.add('hidden');
   },
 
   spawnConfetti() {

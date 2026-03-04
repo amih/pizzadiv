@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
+set -eu
 
 SERVER="ubuntu@verarta.com"
 REMOTE_DIR="/var/www/pizzadiv.amiheines.com"

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pizza-math-v1';
+const CACHE_NAME = 'pizza-math-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -7,6 +7,7 @@ const ASSETS = [
   './input.js',
   './render.js',
   './levels.js',
+  './sound.js',
   './manifest.json',
 ];
 

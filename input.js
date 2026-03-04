@@ -54,9 +54,10 @@ const Input = {
     const adx = Math.abs(dx);
     const ady = Math.abs(dy);
 
-    // Check celebration tap
+    // Check overlay taps (celebration or failure)
     const celebration = document.getElementById('celebration');
-    if (celebration.classList.contains('visible')) {
+    const failure = document.getElementById('failure');
+    if (celebration.classList.contains('visible') || failure.classList.contains('visible')) {
       if (this.onCelebrationTap) this.onCelebrationTap();
       return;
     }

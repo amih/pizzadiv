@@ -376,6 +376,98 @@ body {
   animation: nom-nom 0.4s ease;
 }
 
+/* Crying mouse */
+@keyframes cry-shake {
+  0%, 100% { transform: translateY(0); }
+  20% { transform: translateY(-3px) rotate(-2deg); }
+  40% { transform: translateY(0) rotate(2deg); }
+  60% { transform: translateY(-2px) rotate(-1deg); }
+  80% { transform: translateY(0) rotate(1deg); }
+}
+
+.mouse.crying {
+  animation: cry-shake 0.6s ease infinite;
+}
+
+.mouse.crying .mouse-eye {
+  width: 7px;
+  height: 4px;
+  border-radius: 50% 50% 0 0;
+  background: #212121;
+  position: relative;
+}
+
+.mouse.crying::after {
+  content: '😢';
+  font-size: 10px;
+  margin-top: -2px;
+}
+
+/* Tear drops */
+@keyframes tear-fall {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(12px) scale(0.5); }
+}
+
+.mouse-tear {
+  position: absolute;
+  width: 4px;
+  height: 5px;
+  background: #64B5F6;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  animation: tear-fall 0.8s ease-in infinite;
+  pointer-events: none;
+}
+
+.mouse-tear.left { top: 10px; left: 6px; }
+.mouse-tear.right { top: 10px; right: 6px; animation-delay: 0.4s; }
+
+/* Failure overlay */
+#failure {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 240, 240, 0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+#failure.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#failure.hidden {
+  display: none;
+}
+
+.failure-text {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: var(--pizza-sauce);
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.08);
+  animation: bounce-in 0.6s ease;
+}
+
+.failure-sub {
+  font-size: 1.1rem;
+  color: var(--text-dark);
+  margin-top: 12px;
+  opacity: 0.8;
+}
+
+.failure-tap {
+  font-size: 1rem;
+  color: var(--text-dark);
+  margin-top: 24px;
+  opacity: 0.5;
+}
+
 /* Celebration overlay */
 #celebration {
   position: absolute;

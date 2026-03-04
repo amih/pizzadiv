@@ -6,7 +6,7 @@ const Game = {
     Input.init();
     Input.onCut = () => this.handleCut();
     Input.onDistribute = () => this.handleDistribute();
-    Input.onCelebrationTap = () => this.nextLevel();
+    Input.onCelebrationTap = () => this.handleOverlayTap();
   },
 
   loadLevel(num) {
@@ -27,6 +27,7 @@ const Game = {
     };
 
     Render.hideCelebration();
+    Render.hideFailure();
     Render.drawState(this.state);
   },
 
@@ -41,6 +42,7 @@ const Game = {
     this.state.slices += this.state.wholePizzas * 10;
     this.state.wholePizzas = 0;
 
+    Sound.slice();
     Render.animateCut(this.state).then(() => {
       this.checkCompletion();
     });
@@ -67,24 +69,37 @@ const Game = {
     this.state.slices -= piecesFromSlice;
     this.state.fedMice += toFeed;
 
-    Render.animateDistribute(this.state, toFeed, startFedIndex).then(() => {
+    Render.animateDistribute(this.state, toFeed, startFedIndex, () => Sound.munch()).then(() => {
       this.checkCompletion();
     });
   },
 
   checkCompletion() {
-    if (this.state.fedMice >= this.state.mice) {
+    const allFed = this.state.fedMice >= this.state.mice;
+    const noPiecesLeft = this.state.wholePizzas === 0 && this.state.slices === 0;
+
+    if (allFed) {
       this.state.phase = 'LEVEL_COMPLETE';
       Input.enabled = true;
       Render.showCelebration();
+    } else if (noPiecesLeft) {
+      // Out of food, hungry mice remain → failure
+      this.state.phase = 'LEVEL_FAILED';
+      Input.enabled = true;
+      Sound.cry();
+      Render.showFailure();
     } else {
       this.state.phase = 'READY';
       Input.enabled = true;
     }
   },
 
-  nextLevel() {
-    this.loadLevel(this.state.level + 1);
+  handleOverlayTap() {
+    if (this.state.phase === 'LEVEL_COMPLETE') {
+      this.loadLevel(this.state.level + 1);
+    } else if (this.state.phase === 'LEVEL_FAILED') {
+      this.loadLevel(this.state.level);
+    }
   },
 };
 
