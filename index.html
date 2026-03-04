@@ -8,13 +8,13 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="mobile-web-app-capable" content="yes">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-  <title>Pizza Math</title>
+  <title>Pizza Div</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=1.5.0">
+  <link rel="stylesheet" href="style.css?v=1.8.0">
 </head>
 <body>
   <div id="app">
@@ -31,7 +31,11 @@
           </div>
           <span id="mice-count">× 1</span>
         </div>
-        <button id="settings-btn" aria-label="Settings">&#9881;</button>
+        <div id="header-right">
+          <span id="lives-display"></span>
+          <button id="giveup-btn" aria-label="Give Up">&#10006;</button>
+          <button id="settings-btn" aria-label="Settings">&#9881;</button>
+        </div>
       </header>
       <div id="play-area">
         <div id="knife-zone">
@@ -45,12 +49,18 @@
       <div id="mouse-tray"></div>
       <div id="celebration" class="hidden">
         <div class="celebration-text">Level Complete!</div>
+        <div id="fraction-display"></div>
         <div class="celebration-sub">Tap to continue</div>
       </div>
       <div id="failure" class="hidden">
         <div class="failure-text">Oh no!</div>
         <div class="failure-sub">Some mice are still hungry...</div>
         <div class="failure-tap">Tap to try again</div>
+      </div>
+      <div id="game-over" class="hidden">
+        <div class="failure-text">Game Over</div>
+        <div class="failure-sub">No lives left!</div>
+        <div class="failure-tap">Tap to reset</div>
       </div>
     </div>
 
@@ -61,6 +71,7 @@
         <span>Settings</span>
       </header>
       <div class="settings-body">
+        <button id="install-btn" class="settings-item" style="display: none;">Install on Phone</button>
         <button id="reset-btn" class="settings-item settings-danger">Reset to Level 1</button>
         <button id="refresh-btn" class="settings-item">Update Game</button>
         <div class="settings-version" id="version-label"></div>
@@ -68,14 +79,14 @@
     </div>
   </div>
 
-  <script src="version.js?v=1.5.0"></script>
-  <script src="sound.js?v=1.5.0"></script>
-  <script src="levels.js?v=1.5.0"></script>
-  <script src="render.js?v=1.5.0"></script>
-  <script src="input.js?v=1.5.0"></script>
-  <script src="game.js?v=1.5.0"></script>
+  <script src="version.js?v=1.8.0"></script>
+  <script src="sound.js?v=1.8.0"></script>
+  <script src="levels.js?v=1.8.0"></script>
+  <script src="render.js?v=1.8.0"></script>
+  <script src="input.js?v=1.8.0"></script>
+  <script src="game.js?v=1.8.0"></script>
   <script>
-    console.log('Pizza Math v' + APP_VERSION);
+    console.log('Pizza Div v' + APP_VERSION);
     document.getElementById('version-label').textContent = 'Version ' + APP_VERSION;
 
     // Go fullscreen on first tap (mobile browsers)
@@ -89,9 +100,39 @@
     });
 
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').then((reg) => {
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((reg) => {
         reg.update();
       });
+    }
+
+    // PWA install prompt
+    let deferredPrompt = null;
+    const installBtn = document.getElementById('install-btn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBtn.style.display = '';
+    });
+
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const result = await deferredPrompt.userChoice;
+      if (result.outcome === 'accepted') {
+        installBtn.style.display = 'none';
+      }
+      deferredPrompt = null;
+    });
+
+    window.addEventListener('appinstalled', () => {
+      installBtn.style.display = 'none';
+      deferredPrompt = null;
+    });
+
+    // Hide install button if already in standalone mode
+    if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) {
+      installBtn.style.display = 'none';
     }
 
     function showPage(id) {
@@ -105,6 +146,14 @@
     });
     document.getElementById('settings-back').addEventListener('click', () => {
       showPage('game');
+    });
+
+    document.getElementById('giveup-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      Game.handleGiveUp();
+    });
+    document.getElementById('game-over').addEventListener('click', () => {
+      Game.handleOverlayTap();
     });
 
     document.getElementById('reset-btn').addEventListener('click', () => {

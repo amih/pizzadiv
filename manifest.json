@@ -1,6 +1,6 @@
 {
-  "name": "Pizza Math",
-  "short_name": "PizzaMath",
+  "name": "Pizza Div",
+  "short_name": "PizzaDiv",
   "description": "Learn division by sharing pizza with hungry mice!",
   "start_url": "./index.html",
   "scope": "./",

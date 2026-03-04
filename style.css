@@ -134,6 +134,39 @@ body {
   border-radius: 50% 50% 45% 45%;
 }
 
+/* Header right group */
+#header-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Lives display */
+#lives-display {
+  color: #E53935;
+  font-size: 1.1rem;
+  letter-spacing: 2px;
+  margin-right: 4px;
+}
+
+/* Give up button */
+#giveup-btn {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  color: var(--text-dark);
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+
+#giveup-btn:hover, #giveup-btn:active {
+  opacity: 1;
+  color: var(--pizza-sauce);
+}
+
 /* Settings button in header */
 #settings-btn {
   background: none;
@@ -226,7 +259,6 @@ body {
   display: flex;
   min-height: 0;
   position: relative;
-  overflow: hidden;
 }
 
 #knife-zone {
@@ -275,6 +307,7 @@ body {
   gap: 16px;
   padding: 16px;
   position: relative;
+  z-index: 1;
 }
 
 /* Pizza */
@@ -368,7 +401,53 @@ body {
 .bit.distributing {
   animation: fly-to-mouse 0.5s ease-in forwards;
   z-index: 20;
-  position: relative;
+}
+
+/* Crumbs (1/1000 pizza — tiny dots) */
+.crumb-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  width: 120px;
+  justify-content: center;
+}
+
+.crumb {
+  width: 5px;
+  height: 5px;
+  background: var(--pizza-cheese);
+  border: 1px solid var(--pizza-crust);
+  border-radius: 50%;
+  box-shadow: 0 1px 1px var(--shadow);
+  transition: transform 0.4s ease, opacity 0.4s ease;
+}
+
+.crumb.distributing {
+  animation: fly-to-mouse 0.5s ease-in forwards;
+  z-index: 20;
+}
+
+/* Specks (1/10000 pizza — tiny dots) */
+.speck-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  width: 120px;
+  justify-content: center;
+}
+
+.speck {
+  width: 3px;
+  height: 3px;
+  background: var(--pizza-cheese);
+  border: 0.5px solid var(--pizza-crust);
+  border-radius: 50%;
+  transition: transform 0.4s ease, opacity 0.4s ease;
+}
+
+.speck.distributing {
+  animation: fly-to-mouse 0.5s ease-in forwards;
+  z-index: 20;
 }
 
 /* Cut animation */
@@ -377,7 +456,10 @@ body {
   100% { gap: 3px; opacity: 1; }
 }
 
-.slice-group.cutting {
+.slice-group.cutting,
+.bit-group.cutting,
+.crumb-group.cutting,
+.speck-group.cutting {
   animation: slice-spread 0.5s ease-out forwards;
 }
 
@@ -414,25 +496,21 @@ body {
 /* Distribute animation */
 @keyframes fly-to-mouse {
   0% { transform: translate(0, 0) scale(1); opacity: 1; }
-  70% { opacity: 1; }
-  100% { transform: translate(var(--fly-x), var(--fly-y)) scale(0.5); opacity: 0; }
+  70% { transform: translate(calc(var(--fly-x) * 0.7), calc(var(--fly-y) * 0.7)) scale(1); opacity: 1; }
+  100% { transform: translate(var(--fly-x), var(--fly-y)) scale(0.3); opacity: 0; }
 }
 
 .pizza.distributing, .slice.distributing {
   animation: fly-to-mouse 0.5s ease-in forwards;
   z-index: 20;
-  position: relative;
 }
 
-/* Distributed pieces stay in layout but invisible */
-.distributed {
-  visibility: hidden;
-}
+/* Distributed pieces — already opacity:0 from fly-to-mouse forwards fill */
 
 /* Mouse tray */
 #mouse-tray {
   min-height: 20%;
-  max-height: 25%;
+  max-height: 35%;
   display: grid;
   justify-items: center;
   align-items: center;
@@ -781,6 +859,111 @@ body {
   animation: hint-pulse 2s ease-in-out infinite;
   pointer-events: none;
   color: var(--text-dark);
+}
+
+/* Game over overlay */
+#game-over {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 240, 240, 0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+#game-over.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#game-over.hidden {
+  display: none;
+}
+
+/* Fraction display on celebration */
+#fraction-display {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 20px 0 8px;
+}
+
+.fraction {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.fraction-top, .fraction-bottom {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  justify-content: center;
+  padding: 6px 8px;
+}
+
+.fraction-line {
+  width: 100%;
+  height: 3px;
+  background: var(--text-dark);
+  border-radius: 2px;
+}
+
+.fraction-equals {
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--text-dark);
+}
+
+.fraction-result {
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--pizza-crust);
+}
+
+/* Mini pizza in fraction */
+.mini-pizza {
+  width: 22px;
+  height: 22px;
+  background: var(--pizza-cheese);
+  border: 2px solid var(--pizza-crust);
+  border-radius: 4px;
+}
+
+/* Mini mouse in fraction */
+.mini-mouse-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: scale(0.8);
+}
+
+.mini-mouse-icon .hm-ears {
+  display: flex;
+  gap: 8px;
+  margin-bottom: -3px;
+  z-index: 1;
+}
+
+.mini-mouse-icon .hm-ear {
+  width: 7px;
+  height: 7px;
+  background: var(--mouse-body);
+  border-radius: 50%;
+}
+
+.mini-mouse-icon .hm-body {
+  width: 16px;
+  height: 13px;
+  background: var(--mouse-body);
+  border-radius: 50% 50% 45% 45%;
 }
 
 /* Responsive */

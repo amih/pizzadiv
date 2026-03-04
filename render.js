@@ -7,6 +7,9 @@ const Render = {
   celebration: document.getElementById('celebration'),
   failure: document.getElementById('failure'),
   knife: document.getElementById('knife'),
+  livesDisplay: document.getElementById('lives-display'),
+  gameOver: document.getElementById('game-over'),
+  fractionDisplay: document.getElementById('fraction-display'),
 
   drawState(state) {
     this.levelLabel.textContent = `Level ${state.level}`;
@@ -17,20 +20,28 @@ const Render = {
 
   updateHeader(state) {
     // Pizza count
-    const total = state.wholePizzas + state.slices + state.bits;
-    if (state.wholePizzas > 0 && state.slices === 0 && state.bits === 0) {
+    const total = state.wholePizzas + state.slices + state.bits + state.crumbs + state.specks;
+    if (state.wholePizzas > 0 && state.slices === 0 && state.bits === 0 && state.crumbs === 0 && state.specks === 0) {
       this.pizzaCount.textContent = `\u00D7 ${state.wholePizzas}`;
     } else if (total > 0) {
       const parts = [];
       if (state.wholePizzas > 0) parts.push(`${state.wholePizzas} whole`);
       if (state.slices > 0) parts.push(`${state.slices} slices`);
       if (state.bits > 0) parts.push(`${state.bits} bits`);
+      if (state.crumbs > 0) parts.push(`${state.crumbs} crumbs`);
+      if (state.specks > 0) parts.push(`${state.specks} specks`);
       this.pizzaCount.textContent = parts.join(' + ');
     } else {
       this.pizzaCount.textContent = 'All gone!';
     }
     // Mice count
     this.miceCount.textContent = `\u00D7 ${state.mice}`;
+  },
+
+  updateLives(lives) {
+    if (this.livesDisplay) {
+      this.livesDisplay.textContent = '\u2665'.repeat(Math.max(0, lives));
+    }
   },
 
   drawPizzas(state) {
@@ -56,6 +67,14 @@ const Render = {
     if (state.bits > 0) {
       this.pizzaArea.appendChild(this.createBitGroup(state.bits));
     }
+
+    if (state.crumbs > 0) {
+      this.pizzaArea.appendChild(this.createCrumbGroup(state.crumbs));
+    }
+
+    if (state.specks > 0) {
+      this.pizzaArea.appendChild(this.createSpeckGroup(state.specks));
+    }
   },
 
   createSliceGroup(count) {
@@ -76,6 +95,28 @@ const Render = {
       const bit = document.createElement('div');
       bit.className = 'bit';
       group.appendChild(bit);
+    }
+    return group;
+  },
+
+  createCrumbGroup(count) {
+    const group = document.createElement('div');
+    group.className = 'crumb-group';
+    for (let i = 0; i < count; i++) {
+      const crumb = document.createElement('div');
+      crumb.className = 'crumb';
+      group.appendChild(crumb);
+    }
+    return group;
+  },
+
+  createSpeckGroup(count) {
+    const group = document.createElement('div');
+    group.className = 'speck-group';
+    for (let i = 0; i < count; i++) {
+      const speck = document.createElement('div');
+      speck.className = 'speck';
+      group.appendChild(speck);
     }
     return group;
   },
@@ -115,7 +156,6 @@ const Render = {
         mouse.style.justifySelf = 'center';
       } else if (state.mice === 5) {
         // Quincunx on 3-col grid: corners + center
-        // Row 1: col 1, col 3; Row 2: col 2; Row 3: col 1, col 3
         const positions = [
           { col: '1', row: '1' },
           { col: '3', row: '1' },
@@ -133,12 +173,8 @@ const Render = {
         }
       } else if (state.mice === 10) {
         // Triangle: rows of 1, 2, 3, 4 on a 4-col grid
-        // Row 1 (i=0): 1 mouse centered across 4 cols
-        // Row 2 (i=1,2): 2 mice centered (cols 2-3)
-        // Row 3 (i=3,4,5): 3 mice centered (cols 1-2, 2-3, 3-4) — use col 1,2,3 + span trick
-        // Row 4 (i=6,7,8,9): 4 mice filling all cols
         const tri = [
-          { col: '1 / 5', row: '1' },   // centered across all 4
+          { col: '1 / 5', row: '1' },
           { col: '2', row: '2' },
           { col: '3', row: '2' },
           { col: '1 / 3', row: '3' },
@@ -171,9 +207,13 @@ const Render = {
     return new Promise((resolve) => {
       this.knife.classList.add('cutting');
 
-      const targets = what === 'pizza'
-        ? this.pizzaArea.querySelectorAll('.pizza')
-        : this.pizzaArea.querySelectorAll('.slice');
+      const targetMap = {
+        pizza: '.pizza',
+        slice: '.slice',
+        bit: '.bit',
+        crumb: '.crumb',
+      };
+      const targets = this.pizzaArea.querySelectorAll(targetMap[what]);
 
       setTimeout(() => {
         targets.forEach((el) => {
@@ -186,7 +226,7 @@ const Render = {
       setTimeout(() => {
         this.knife.classList.remove('cutting');
         this.drawPizzas(state);
-        const groups = this.pizzaArea.querySelectorAll('.slice-group, .bit-group');
+        const groups = this.pizzaArea.querySelectorAll('.slice-group, .bit-group, .crumb-group, .speck-group');
         groups.forEach((g) => g.classList.add('cutting'));
         setTimeout(resolve, 500);
       }, 500);
@@ -199,7 +239,21 @@ const Render = {
       const pizzaEls = Array.from(this.pizzaArea.querySelectorAll('.pizza:not(.distributed)'));
       const sliceEls = Array.from(this.pizzaArea.querySelectorAll('.slice:not(.distributed)'));
       const bitEls = Array.from(this.pizzaArea.querySelectorAll('.bit:not(.distributed)'));
-      const allPieces = [...pizzaEls, ...sliceEls, ...bitEls];
+      const crumbEls = Array.from(this.pizzaArea.querySelectorAll('.crumb:not(.distributed)'));
+      const speckEls = Array.from(this.pizzaArea.querySelectorAll('.speck:not(.distributed)'));
+      const allPieces = [...pizzaEls, ...sliceEls, ...bitEls, ...crumbEls, ...speckEls];
+
+      // Snapshot ALL positions first, then apply absolute
+      const areaRect = this.pizzaArea.getBoundingClientRect();
+      const topChildren = Array.from(this.pizzaArea.children);
+      const rects = topChildren.map((el) => el.getBoundingClientRect());
+      topChildren.forEach((el, i) => {
+        const r = rects[i];
+        el.style.position = 'absolute';
+        el.style.left = (r.left - areaRect.left) + 'px';
+        el.style.top = (r.top - areaRect.top) + 'px';
+        el.style.width = r.width + 'px';
+      });
 
       let animated = 0;
 
@@ -227,7 +281,6 @@ const Render = {
             animated++;
             if (animated === toDistribute) {
               setTimeout(() => {
-                // Mark distributed pieces — keep in DOM to prevent reflow
                 allPieces.slice(0, toDistribute).forEach((p) => {
                   p.classList.add('distributed');
                   p.style.pointerEvents = 'none';
@@ -244,7 +297,46 @@ const Render = {
     });
   },
 
-  showCelebration() {
+  formatDecimal(pizzas, mice) {
+    const result = pizzas / mice;
+    // Check for repeating decimals
+    const str = result.toString();
+    if (str.length <= 10) return str;
+    // Try to detect repeating pattern — just round to reasonable precision
+    return parseFloat(result.toPrecision(6)).toString();
+  },
+
+  showCelebration(state) {
+    // Build fraction display
+    if (this.fractionDisplay && state) {
+      const def = LEVELS[state.level - 1];
+      const pizzas = def.pizzas;
+      const mice = def.mice;
+
+      let topHTML = '';
+      for (let i = 0; i < pizzas; i++) {
+        topHTML += '<div class="mini-pizza"></div>';
+      }
+
+      let bottomHTML = '';
+      for (let i = 0; i < mice; i++) {
+        bottomHTML += `<div class="mini-mouse-icon">
+          <div class="hm-ears"><div class="hm-ear"></div><div class="hm-ear"></div></div>
+          <div class="hm-body"></div>
+        </div>`;
+      }
+
+      this.fractionDisplay.innerHTML = `
+        <div class="fraction">
+          <div class="fraction-top">${topHTML}</div>
+          <div class="fraction-line"></div>
+          <div class="fraction-bottom">${bottomHTML}</div>
+        </div>
+        <div class="fraction-equals">=</div>
+        <div class="fraction-result">${this.formatDecimal(pizzas, mice)}</div>
+      `;
+    }
+
     this.celebration.classList.remove('hidden');
     void this.celebration.offsetWidth;
     this.celebration.classList.add('visible');
@@ -255,6 +347,7 @@ const Render = {
     this.celebration.classList.remove('visible');
     this.celebration.classList.add('hidden');
     document.querySelectorAll('.confetti').forEach((c) => c.remove());
+    if (this.fractionDisplay) this.fractionDisplay.innerHTML = '';
   },
 
   showFailure() {
@@ -280,6 +373,17 @@ const Render = {
   hideFailure() {
     this.failure.classList.remove('visible');
     this.failure.classList.add('hidden');
+  },
+
+  showGameOver() {
+    this.gameOver.classList.remove('hidden');
+    void this.gameOver.offsetWidth;
+    this.gameOver.classList.add('visible');
+  },
+
+  hideGameOver() {
+    this.gameOver.classList.remove('visible');
+    this.gameOver.classList.add('hidden');
   },
 
   spawnConfetti() {

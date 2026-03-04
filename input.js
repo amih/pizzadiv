@@ -5,6 +5,7 @@ const Input = {
   onCut: null,
   onDistribute: null,
   onCelebrationTap: null,
+  onUndo: null,
   enabled: true,
 
   init() {
@@ -67,6 +68,12 @@ const Input = {
     // Swipe down on pizza area → DISTRIBUTE (allowed even during animation)
     if (dy > 50 && ady > adx && !this.startedInKnife) {
       if (this.onDistribute) this.onDistribute();
+      return;
+    }
+
+    // Swipe left from knife zone → UNDO
+    if (this.startedInKnife && dx < -50 && adx > ady) {
+      if (this.onUndo) this.onUndo();
       return;
     }
 
