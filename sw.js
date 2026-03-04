@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pizza-math-v6';
+const CACHE_NAME = 'pizza-math-v7';
 const ASSETS = [
   './',
   './index.html',
@@ -31,7 +31,15 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  // Network-first for code files — always get latest, fall back to cache offline
   e.respondWith(
-    caches.match(e.request).then((cached) => cached || fetch(e.request))
+    fetch(e.request)
+      .then((response) => {
+        // Update cache with fresh response
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
+        return response;
+      })
+      .catch(() => caches.match(e.request))
   );
 });
