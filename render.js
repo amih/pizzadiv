@@ -297,13 +297,20 @@ const Render = {
     });
   },
 
-  formatDecimal(pizzas, mice) {
-    const result = pizzas / mice;
-    // Check for repeating decimals
-    const str = result.toString();
-    if (str.length <= 10) return str;
-    // Try to detect repeating pattern — just round to reasonable precision
-    return parseFloat(result.toPrecision(6)).toString();
+  getPieceBreakdown(pizzas, mice) {
+    // Long division: each mouse gets some whole pizzas, slices, bits, crumbs, specks
+    const pieces = [];
+    const names = ['pizza', 'slice', 'bit', 'crumb', 'speck'];
+    const classes = ['mini-pizza', 'mini-slice', 'mini-bit', 'mini-crumb', 'mini-speck'];
+    let remainder = pizzas;
+    for (let i = 0; i < names.length && remainder > 0; i++) {
+      const count = Math.floor(remainder / mice);
+      remainder = (remainder % mice) * 10;
+      if (count > 0) {
+        pieces.push({ name: names[i], cls: classes[i], count });
+      }
+    }
+    return pieces;
   },
 
   showCelebration(state) {
@@ -326,6 +333,17 @@ const Render = {
         </div>`;
       }
 
+      const pieces = this.getPieceBreakdown(pizzas, mice);
+      let resultHTML = '';
+      pieces.forEach((p, idx) => {
+        if (idx > 0) resultHTML += '<span class="piece-plus">+</span>';
+        let iconsHTML = '';
+        for (let i = 0; i < p.count; i++) {
+          iconsHTML += `<div class="${p.cls}"></div>`;
+        }
+        resultHTML += `<div class="piece-group">${iconsHTML}</div>`;
+      });
+
       this.fractionDisplay.innerHTML = `
         <div class="fraction">
           <div class="fraction-top">${topHTML}</div>
@@ -333,7 +351,7 @@ const Render = {
           <div class="fraction-bottom">${bottomHTML}</div>
         </div>
         <div class="fraction-equals">=</div>
-        <div class="fraction-result">${this.formatDecimal(pizzas, mice)}</div>
+        <div class="fraction-result-pieces">${resultHTML}</div>
       `;
     }
 
