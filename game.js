@@ -241,7 +241,7 @@ const Game = {
     Render.animateDistributeRound(this.state, toDistribute, isPartialRound, () => Sound.munch(), pieceDelay).then(() => {
       if (isPartialRound) {
         // Check if remainder is only specks (can't cut further) — auto-dismiss
-        if (this.canAutoDismissRemainder()) {
+        if (this.hasUndistributableRemainder()) {
           this.autoDismissRemainder();
           return;
         }
@@ -280,12 +280,6 @@ const Game = {
            this.state.bits === 0 && this.state.crumbs === 0 && this.state.specks === 0;
   },
 
-  canAutoDismissRemainder() {
-    // Only auto-dismiss if remainder is exclusively specks (smallest unit, can't cut further)
-    return this.state.specks > 0 && this.state.wholePizzas === 0 &&
-           this.state.slices === 0 && this.state.bits === 0 && this.state.crumbs === 0;
-  },
-
   autoDismissRemainder() {
     // Animate remaining specks off screen, then complete the level
     Sound.sparkle();
@@ -312,11 +306,21 @@ const Game = {
     }
   },
 
+  // Check if only specks remain and they can't fill a round for all mice
+  hasUndistributableRemainder() {
+    return this.state.specks > 0 && this.state.specks < this.state.mice &&
+           this.state.wholePizzas === 0 && this.state.slices === 0 &&
+           this.state.bits === 0 && this.state.crumbs === 0;
+  },
+
   checkCompletion() {
     if (this.noPiecesLeft()) {
       this.state.phase = 'LEVEL_COMPLETE';
       Input.enabled = true;
       Render.showCelebration(this.state);
+    } else if (this.hasDistributed && this.hasUndistributableRemainder()) {
+      // Last possible cut done, remainder too small — auto-dismiss
+      this.autoDismissRemainder();
     } else {
       this.state.phase = 'READY';
       Input.enabled = true;
