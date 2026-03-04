@@ -335,8 +335,7 @@ const Render = {
 
       const pieces = this.getPieceBreakdown(pizzas, mice);
       let resultHTML = '';
-      pieces.forEach((p, idx) => {
-        if (idx > 0) resultHTML += '<span class="piece-plus">+</span>';
+      pieces.forEach((p) => {
         let iconsHTML = '';
         for (let i = 0; i < p.count; i++) {
           iconsHTML += `<div class="${p.cls}"></div>`;
