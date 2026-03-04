@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=1.0.0">
+  <link rel="stylesheet" href="style.css?v=1.1.0">
 </head>
 <body>
   <div id="app">
@@ -22,7 +22,15 @@
     <div id="game" class="page active">
       <header id="header">
         <span id="level-label">Level 1</span>
-        <span id="pizza-count">&#127829; × 1</span>
+        <div id="header-info">
+          <div class="header-pizza-icon"></div>
+          <span id="pizza-count">× 1</span>
+          <div class="header-mouse-icon">
+            <div class="hm-ears"><div class="hm-ear"></div><div class="hm-ear"></div></div>
+            <div class="hm-body"></div>
+          </div>
+          <span id="mice-count">× 1</span>
+        </div>
         <button id="settings-btn" aria-label="Settings">&#9881;</button>
       </header>
       <div id="play-area">
@@ -59,12 +67,12 @@
     </div>
   </div>
 
-  <script src="version.js?v=1.0.0"></script>
-  <script src="sound.js?v=1.0.0"></script>
-  <script src="levels.js?v=1.0.0"></script>
-  <script src="render.js?v=1.0.0"></script>
-  <script src="input.js?v=1.0.0"></script>
-  <script src="game.js?v=1.0.0"></script>
+  <script src="version.js?v=1.1.0"></script>
+  <script src="sound.js?v=1.1.0"></script>
+  <script src="levels.js?v=1.1.0"></script>
+  <script src="render.js?v=1.1.0"></script>
+  <script src="input.js?v=1.1.0"></script>
+  <script src="game.js?v=1.1.0"></script>
   <script>
     console.log('Pizza Math v' + APP_VERSION);
     document.getElementById('version-label').textContent = 'Version ' + APP_VERSION;
@@ -75,7 +83,6 @@
       });
     }
 
-    // Page navigation
     function showPage(id) {
       document.querySelectorAll('.page').forEach((p) => p.classList.remove('active'));
       document.getElementById(id).classList.add('active');

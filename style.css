@@ -78,6 +78,62 @@ body {
   display: flex;
 }
 
+/* Header info bar */
+#header-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1rem;
+}
+
+/* Mini pizza icon in header (square) */
+.header-pizza-icon {
+  width: 20px;
+  height: 20px;
+  background: var(--pizza-cheese);
+  border: 2px solid var(--pizza-crust);
+  border-radius: 4px;
+  position: relative;
+}
+
+.header-pizza-icon::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  background:
+    radial-gradient(circle at 30% 35%, var(--pepperoni) 2px, transparent 2px),
+    radial-gradient(circle at 70% 65%, var(--pepperoni) 2px, transparent 2px);
+}
+
+/* Mini mouse icon in header */
+.header-mouse-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-left: 8px;
+}
+
+.hm-ears {
+  display: flex;
+  gap: 8px;
+  margin-bottom: -3px;
+  z-index: 1;
+}
+
+.hm-ear {
+  width: 7px;
+  height: 7px;
+  background: var(--mouse-body);
+  border-radius: 50%;
+}
+
+.hm-body {
+  width: 16px;
+  height: 13px;
+  background: var(--mouse-body);
+  border-radius: 50% 50% 45% 45%;
+}
+
 /* Settings button in header */
 #settings-btn {
   background: none;
@@ -279,6 +335,31 @@ body {
   background: var(--pepperoni);
   border-radius: 2px;
   opacity: 0.7;
+}
+
+/* Bits (1/100 pizza — tiny squares) */
+.bit-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  width: 120px;
+  justify-content: center;
+}
+
+.bit {
+  width: 10px;
+  height: 10px;
+  background: var(--pizza-cheese);
+  border: 1px solid var(--pizza-crust);
+  border-radius: 2px;
+  box-shadow: 0 1px 2px var(--shadow);
+  transition: transform 0.4s ease, opacity 0.4s ease;
+}
+
+.bit.distributing {
+  animation: fly-to-mouse 0.5s ease-in forwards;
+  z-index: 20;
+  position: relative;
 }
 
 /* Cut animation */

@@ -3,23 +3,34 @@ const Render = {
   mouseTray: document.getElementById('mouse-tray'),
   levelLabel: document.getElementById('level-label'),
   pizzaCount: document.getElementById('pizza-count'),
+  miceCount: document.getElementById('mice-count'),
   celebration: document.getElementById('celebration'),
   failure: document.getElementById('failure'),
   knife: document.getElementById('knife'),
 
   drawState(state) {
     this.levelLabel.textContent = `Level ${state.level}`;
-    if (state.wholePizzas > 0 && state.slices === 0) {
-      this.pizzaCount.textContent = `\u{1F355} \u00D7 ${state.wholePizzas}`;
-    } else if (state.wholePizzas === 0 && state.slices > 0) {
-      this.pizzaCount.textContent = `${state.slices} slices`;
-    } else if (state.wholePizzas > 0 && state.slices > 0) {
-      this.pizzaCount.textContent = `\u{1F355} \u00D7 ${state.wholePizzas} + ${state.slices} slices`;
+    this.updateHeader(state);
+    this.drawPizzas(state);
+    this.drawMice(state);
+  },
+
+  updateHeader(state) {
+    // Pizza count
+    const total = state.wholePizzas + state.slices + state.bits;
+    if (state.wholePizzas > 0 && state.slices === 0 && state.bits === 0) {
+      this.pizzaCount.textContent = `\u00D7 ${state.wholePizzas}`;
+    } else if (total > 0) {
+      const parts = [];
+      if (state.wholePizzas > 0) parts.push(`${state.wholePizzas} whole`);
+      if (state.slices > 0) parts.push(`${state.slices} slices`);
+      if (state.bits > 0) parts.push(`${state.bits} bits`);
+      this.pizzaCount.textContent = parts.join(' + ');
     } else {
       this.pizzaCount.textContent = 'All gone!';
     }
-    this.drawPizzas(state);
-    this.drawMice(state);
+    // Mice count
+    this.miceCount.textContent = `\u00D7 ${state.mice}`;
   },
 
   drawPizzas(state) {
@@ -28,21 +39,22 @@ const Render = {
     for (let i = 0; i < state.wholePizzas; i++) {
       const pizza = document.createElement('div');
       pizza.className = 'pizza';
-      pizza.dataset.index = i;
       this.pizzaArea.appendChild(pizza);
     }
 
     if (state.slices > 0) {
-      // group slices in sets of 10 for visual clarity
       const fullGroups = Math.floor(state.slices / 10);
       const remainder = state.slices % 10;
-
       for (let g = 0; g < fullGroups; g++) {
         this.pizzaArea.appendChild(this.createSliceGroup(10));
       }
       if (remainder > 0) {
         this.pizzaArea.appendChild(this.createSliceGroup(remainder));
       }
+    }
+
+    if (state.bits > 0) {
+      this.pizzaArea.appendChild(this.createBitGroup(state.bits));
     }
   },
 
@@ -53,6 +65,17 @@ const Render = {
       const slice = document.createElement('div');
       slice.className = 'slice';
       group.appendChild(slice);
+    }
+    return group;
+  },
+
+  createBitGroup(count) {
+    const group = document.createElement('div');
+    group.className = 'bit-group';
+    for (let i = 0; i < count; i++) {
+      const bit = document.createElement('div');
+      bit.className = 'bit';
+      group.appendChild(bit);
     }
     return group;
   },
@@ -86,39 +109,39 @@ const Render = {
     }
   },
 
-  animateCut(state) {
+  animateCut(state, what) {
     return new Promise((resolve) => {
       this.knife.classList.add('cutting');
 
-      // Add shing effect to each pizza
-      const pizzas = this.pizzaArea.querySelectorAll('.pizza');
+      const targets = what === 'pizza'
+        ? this.pizzaArea.querySelectorAll('.pizza')
+        : this.pizzaArea.querySelectorAll('.slice');
+
       setTimeout(() => {
-        pizzas.forEach((pizza) => {
+        targets.forEach((el) => {
           const shing = document.createElement('div');
           shing.className = 'shing-effect';
-          pizza.appendChild(shing);
+          el.appendChild(shing);
         });
       }, 150);
 
       setTimeout(() => {
         this.knife.classList.remove('cutting');
-        // Replace pizzas with slice groups
         this.drawPizzas(state);
-        // Animate the spread
-        const groups = this.pizzaArea.querySelectorAll('.slice-group');
+        const groups = this.pizzaArea.querySelectorAll('.slice-group, .bit-group');
         groups.forEach((g) => g.classList.add('cutting'));
         setTimeout(resolve, 500);
       }, 500);
     });
   },
 
-  // Each round: one piece flies to each mouse (0..toDistribute-1)
   animateDistributeRound(state, toDistribute, isPartial, onMunch) {
     return new Promise((resolve) => {
       const mouseEls = this.mouseTray.querySelectorAll('.mouse');
       const pizzaEls = Array.from(this.pizzaArea.querySelectorAll('.pizza'));
       const sliceEls = Array.from(this.pizzaArea.querySelectorAll('.slice'));
-      const allPieces = [...pizzaEls, ...sliceEls];
+      const bitEls = Array.from(this.pizzaArea.querySelectorAll('.bit'));
+      const allPieces = [...pizzaEls, ...sliceEls, ...bitEls];
 
       let animated = 0;
 
@@ -146,7 +169,14 @@ const Render = {
             animated++;
             if (animated === toDistribute) {
               setTimeout(() => {
-                this.drawState(state);
+                // Remove distributed pieces from DOM (don't full redraw)
+                allPieces.slice(0, toDistribute).forEach((p) => p.remove());
+                // Clean up empty groups
+                this.pizzaArea.querySelectorAll('.slice-group, .bit-group').forEach((g) => {
+                  if (g.children.length === 0) g.remove();
+                });
+                // Update header only
+                this.updateHeader(state);
                 resolve();
               }, 200);
             }
@@ -160,7 +190,6 @@ const Render = {
 
   showCelebration() {
     this.celebration.classList.remove('hidden');
-    // Force reflow before adding visible
     void this.celebration.offsetWidth;
     this.celebration.classList.add('visible');
     this.spawnConfetti();
@@ -173,7 +202,6 @@ const Render = {
   },
 
   showFailure() {
-    // Make mice that didn't get food cry
     const mice = this.mouseTray.querySelectorAll('.mouse:not(.eating)');
     mice.forEach((m) => {
       m.classList.add('crying');
@@ -186,7 +214,6 @@ const Render = {
       body.appendChild(tearR);
     });
 
-    // Show overlay after a short delay so crying is visible first
     setTimeout(() => {
       this.failure.classList.remove('hidden');
       void this.failure.offsetWidth;
