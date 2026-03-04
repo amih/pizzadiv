@@ -1,6 +1,7 @@
 const Game = {
   state: null,
-  distributeQueued: false,
+  distributeQueued: 0,
+  cutQueued: 0,
 
   init() {
     const saved = localStorage.getItem('pizzamath_level');
@@ -25,7 +26,8 @@ const Game = {
     if (num < 1) num = 1;
 
     const def = LEVELS[idx];
-    this.distributeQueued = false;
+    this.distributeQueued = 0;
+    this.cutQueued = 0;
     this.state = {
       level: num,
       wholePizzas: def.pizzas,
@@ -47,7 +49,19 @@ const Game = {
   },
 
   handleCut() {
+    if (this.state.phase === 'ANIMATING') {
+      this.cutQueued++;
+      Sound.tick();
+      return;
+    }
+
     if (this.state.phase !== 'READY') return;
+
+    this.executeCut();
+  },
+
+  executeCut() {
+    if (this.cutQueued > 0) this.cutQueued--;
 
     if (this.state.wholePizzas > 0) {
       this.state.phase = 'ANIMATING';
@@ -73,11 +87,9 @@ const Game = {
   handleDistribute() {
     // Queue distribute if already animating
     if (this.state.phase === 'ANIMATING') {
-      if (!this.distributeQueued) {
-        this.distributeQueued = true;
-        Sound.confirm();
-        Render.pulseMouseTray();
-      }
+      this.distributeQueued++;
+      Sound.tick();
+      Render.nudgeMice();
       return;
     }
 
@@ -87,7 +99,7 @@ const Game = {
   },
 
   executeDistribute() {
-    this.distributeQueued = false;
+    if (this.distributeQueued > 0) this.distributeQueued--;
 
     const available = this.state.wholePizzas + this.state.slices + this.state.bits;
     if (available === 0) return;
@@ -112,23 +124,21 @@ const Game = {
 
     Render.animateDistributeRound(this.state, toDistribute, isPartialRound, () => Sound.munch()).then(() => {
       if (isPartialRound) {
-        this.distributeQueued = false;
+        this.distributeQueued = 0;
         this.state.phase = 'LEVEL_FAILED';
         Input.enabled = true;
         Sound.cry();
         Render.showFailure();
-      } else if (this.distributeQueued) {
-        // Process queued distribute — first check completion of this round
+      } else if (this.distributeQueued > 0) {
         const noPiecesLeft = this.state.wholePizzas === 0 && this.state.slices === 0 && this.state.bits === 0;
         if (noPiecesLeft) {
-          this.distributeQueued = false;
+          this.distributeQueued = 0;
           this.state.phase = 'LEVEL_COMPLETE';
           Input.enabled = true;
           Render.showCelebration();
         } else {
           this.state.phase = 'READY';
           Input.enabled = true;
-          Render.drawState(this.state);
           this.executeDistribute();
         }
       } else {
@@ -138,11 +148,14 @@ const Game = {
   },
 
   afterAnimating() {
-    if (this.distributeQueued) {
+    if (this.distributeQueued > 0) {
       this.state.phase = 'READY';
       Input.enabled = true;
-      Render.drawState(this.state);
       this.executeDistribute();
+    } else if (this.cutQueued > 0) {
+      this.state.phase = 'READY';
+      Input.enabled = true;
+      this.executeCut();
     } else {
       this.checkCompletion();
     }

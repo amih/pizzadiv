@@ -39,7 +39,7 @@ const Input = {
     if (!this.tracking) return;
 
     const dx = point.clientX - this.startX;
-    if (this.enabled && this.startedInKnife && dx > 20) {
+    if (this.startedInKnife && dx > 20) {
       document.getElementById('knife').classList.add('swiping');
     } else {
       document.getElementById('knife').classList.remove('swiping');
@@ -70,10 +70,7 @@ const Input = {
       return;
     }
 
-    // Everything else requires enabled
-    if (!this.enabled) return;
-
-    // Swipe right from knife zone → CUT
+    // Swipe right from knife zone → CUT (allowed even during animation)
     if (this.startedInKnife && dx > 50 && adx > ady) {
       if (this.onCut) this.onCut();
       return;

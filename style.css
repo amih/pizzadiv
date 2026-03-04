@@ -481,15 +481,15 @@ body {
   grid-template-columns: repeat(5, auto);
 }
 
-/* Queued distribute pulse */
-@keyframes tray-pulse {
-  0% { background-color: rgba(165, 214, 167, 0); }
-  30% { background-color: rgba(165, 214, 167, 0.35); }
-  100% { background-color: rgba(165, 214, 167, 0); }
+/* Queued distribute — subtle mouse nudge */
+@keyframes mouse-nudge {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.05); }
+  100% { transform: scale(1); }
 }
 
-#mouse-tray.queued-pulse {
-  animation: tray-pulse 0.4s ease-out;
+.mouse.nudge {
+  animation: mouse-nudge 0.2s ease-out;
 }
 
 /* Mouse */

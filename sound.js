@@ -12,60 +12,52 @@ const Sound = {
     if (this.ctx.state === 'suspended') this.ctx.resume();
   },
 
-  // Sword slice — metallic "shing" sweep
+  // Knife slicing through pizza — soft swoosh
   slice() {
     this.ensure();
     const ctx = this.ctx;
     const now = ctx.currentTime;
 
-    // High-pitched sweep down
-    const osc = ctx.createOscillator();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(4000, now);
-    osc.frequency.exponentialRampToValueAtTime(800, now + 0.15);
-
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.25, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
-
-    // Metallic ring
-    const osc2 = ctx.createOscillator();
-    osc2.type = 'sine';
-    osc2.frequency.setValueAtTime(3200, now);
-    osc2.frequency.exponentialRampToValueAtTime(1800, now + 0.3);
-
-    const gain2 = ctx.createGain();
-    gain2.gain.setValueAtTime(0.12, now);
-    gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
-
-    // Noise burst for the "shh" part
-    const bufferSize = ctx.sampleRate * 0.15;
+    // Filtered noise swoosh — the main slicing texture
+    const bufferSize = ctx.sampleRate * 0.25;
     const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const data = noiseBuffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) {
-      data[i] = (Math.random() * 2 - 1) * 0.3;
+      data[i] = (Math.random() * 2 - 1);
     }
     const noise = ctx.createBufferSource();
     noise.buffer = noiseBuffer;
 
+    // Bandpass sweeps down for a natural cutting feel
+    const bandpass = ctx.createBiquadFilter();
+    bandpass.type = 'bandpass';
+    bandpass.frequency.setValueAtTime(2000, now);
+    bandpass.frequency.exponentialRampToValueAtTime(600, now + 0.2);
+    bandpass.Q.value = 1.5;
+
     const noiseGain = ctx.createGain();
-    noiseGain.gain.setValueAtTime(0.15, now);
-    noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+    noiseGain.gain.setValueAtTime(0.18, now);
+    noiseGain.gain.setValueAtTime(0.2, now + 0.03);
+    noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
 
-    const hipass = ctx.createBiquadFilter();
-    hipass.type = 'highpass';
-    hipass.frequency.value = 3000;
+    // Soft thud at the end — knife hitting the board
+    const thud = ctx.createOscillator();
+    thud.type = 'sine';
+    thud.frequency.setValueAtTime(120, now + 0.08);
+    thud.frequency.exponentialRampToValueAtTime(60, now + 0.18);
 
-    osc.connect(gain).connect(ctx.destination);
-    osc2.connect(gain2).connect(ctx.destination);
-    noise.connect(hipass).connect(noiseGain).connect(ctx.destination);
+    const thudGain = ctx.createGain();
+    thudGain.gain.setValueAtTime(0.001, now);
+    thudGain.gain.setValueAtTime(0.1, now + 0.08);
+    thudGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
 
-    osc.start(now);
-    osc.stop(now + 0.25);
-    osc2.start(now);
-    osc2.stop(now + 0.35);
+    noise.connect(bandpass).connect(noiseGain).connect(ctx.destination);
+    thud.connect(thudGain).connect(ctx.destination);
+
     noise.start(now);
-    noise.stop(now + 0.15);
+    noise.stop(now + 0.25);
+    thud.start(now + 0.08);
+    thud.stop(now + 0.2);
   },
 
   // Munching — short "nom nom" chewing sound
@@ -117,24 +109,24 @@ const Sound = {
     }
   },
 
-  // Quick confirmation chirp — queued action acknowledged
-  confirm() {
+  // Soft tick — subtle acknowledgment of queued action
+  tick() {
     this.ensure();
     const ctx = this.ctx;
     const now = ctx.currentTime;
 
     const osc = ctx.createOscillator();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(800, now);
-    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.08);
+    osc.frequency.setValueAtTime(600, now);
+    osc.frequency.exponentialRampToValueAtTime(400, now + 0.04);
 
     const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.2, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
 
     osc.connect(gain).connect(ctx.destination);
     osc.start(now);
-    osc.stop(now + 0.12);
+    osc.stop(now + 0.06);
   },
 
   // Sad whimper — descending tone

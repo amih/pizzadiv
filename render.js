@@ -137,13 +137,13 @@ const Render = {
     }
   },
 
-  pulseMouseTray() {
-    this.mouseTray.classList.remove('queued-pulse');
-    void this.mouseTray.offsetWidth;
-    this.mouseTray.classList.add('queued-pulse');
-    this.mouseTray.addEventListener('animationend', () => {
-      this.mouseTray.classList.remove('queued-pulse');
-    }, { once: true });
+  nudgeMice() {
+    const mice = this.mouseTray.querySelectorAll('.mouse');
+    mice.forEach((m) => {
+      m.classList.remove('nudge');
+      void m.offsetWidth;
+      m.classList.add('nudge');
+    });
   },
 
   animateCut(state, what) {
