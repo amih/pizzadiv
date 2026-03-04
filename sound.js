@@ -129,6 +129,29 @@ const Sound = {
     osc.stop(now + 0.06);
   },
 
+  // Cheerful sparkle — ascending twinkle for remainder dismissal
+  sparkle() {
+    this.ensure();
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+
+    const notes = [523, 659, 784, 1047]; // C5, E5, G5, C6
+    notes.forEach((freq, i) => {
+      const t = now + i * 0.08;
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t);
+
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.15, t);
+      gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.2);
+    });
+  },
+
   // Sad whimper — descending tone
   cry() {
     this.ensure();

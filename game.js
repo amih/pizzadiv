@@ -5,6 +5,8 @@ const Game = {
   cutHistory: [],
   hasDistributed: false,
   lives: 3,
+  distributeTimes: [],
+  fastMode: false,
 
   init() {
     this.loadLives();
@@ -16,6 +18,11 @@ const Game = {
     Input.onDistribute = () => this.handleDistribute();
     Input.onCelebrationTap = () => this.handleOverlayTap();
     Input.onUndo = () => this.handleUndo();
+
+    document.getElementById('undo-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.handleUndo();
+    });
   },
 
   saveLives() {
@@ -40,7 +47,6 @@ const Game = {
   loadLevel(num) {
     const idx = num - 1;
     if (idx >= LEVELS.length) {
-      // All levels done — stay on last level complete or wrap
       return this.loadLevel(LEVELS.length);
     }
     if (num < 1) num = 1;
@@ -50,6 +56,8 @@ const Game = {
     this.cutQueued = 0;
     this.cutHistory = [];
     this.hasDistributed = false;
+    this.distributeTimes = [];
+    this.fastMode = false;
     this.state = {
       level: num,
       wholePizzas: def.pizzas,
@@ -65,6 +73,7 @@ const Game = {
     Render.hideCelebration();
     Render.hideFailure();
     Render.hideGameOver();
+    Render.hideUndoBtn();
     Render.updateLives(this.lives);
     Render.drawState(this.state);
   },
@@ -73,6 +82,14 @@ const Game = {
     localStorage.removeItem('pizzadiv_level');
     this.resetLives();
     this.loadLevel(1);
+  },
+
+  updateUndoBtn() {
+    if (this.cutHistory.length > 0 && !this.hasDistributed) {
+      Render.showUndoBtn();
+    } else {
+      Render.hideUndoBtn();
+    }
   },
 
   handleUndo() {
@@ -85,6 +102,7 @@ const Game = {
     this.state.specks = prev.specks;
     Render.drawPizzas(this.state);
     Render.updateHeader(this.state);
+    this.updateUndoBtn();
   },
 
   handleCut() {
@@ -118,6 +136,7 @@ const Game = {
       this.state.wholePizzas = 0;
       Sound.slice();
       Render.animateCut(this.state, 'pizza').then(() => {
+        this.updateUndoBtn();
         this.afterAnimating();
       });
     } else if (this.state.slices > 0) {
@@ -127,6 +146,7 @@ const Game = {
       this.state.slices = 0;
       Sound.slice();
       Render.animateCut(this.state, 'slice').then(() => {
+        this.updateUndoBtn();
         this.afterAnimating();
       });
     } else if (this.state.bits > 0) {
@@ -136,6 +156,7 @@ const Game = {
       this.state.bits = 0;
       Sound.slice();
       Render.animateCut(this.state, 'bit').then(() => {
+        this.updateUndoBtn();
         this.afterAnimating();
       });
     } else if (this.state.crumbs > 0) {
@@ -145,15 +166,31 @@ const Game = {
       this.state.crumbs = 0;
       Sound.slice();
       Render.animateCut(this.state, 'crumb').then(() => {
+        this.updateUndoBtn();
         this.afterAnimating();
       });
     } else {
       // Nothing to cut — remove the history entry we just pushed
       this.cutHistory.pop();
+      this.updateUndoBtn();
     }
   },
 
   handleDistribute() {
+    // Track swipe timestamps for fast mode
+    const now = Date.now();
+    this.distributeTimes.push(now);
+    // Keep only last 1.5s
+    this.distributeTimes = this.distributeTimes.filter(t => now - t < 1500);
+    if (this.distributeTimes.length >= 3) {
+      this.fastMode = true;
+    }
+
+    // Hide undo on first distribute
+    if (!this.hasDistributed) {
+      Render.hideUndoBtn();
+    }
+
     // Queue distribute if already animating
     if (this.state.phase === 'ANIMATING') {
       this.distributeQueued++;
@@ -171,6 +208,7 @@ const Game = {
     if (this.distributeQueued > 0) this.distributeQueued--;
 
     this.hasDistributed = true;
+    Render.hideUndoBtn();
 
     const available = this.state.wholePizzas + this.state.slices + this.state.bits + this.state.crumbs + this.state.specks;
     if (available === 0) return;
@@ -198,9 +236,15 @@ const Game = {
     this.state.specks -= fromSpecks;
 
     const isPartialRound = toDistribute < this.state.mice;
+    const pieceDelay = this.fastMode ? 30 : 150;
 
-    Render.animateDistributeRound(this.state, toDistribute, isPartialRound, () => Sound.munch()).then(() => {
+    Render.animateDistributeRound(this.state, toDistribute, isPartialRound, () => Sound.munch(), pieceDelay).then(() => {
       if (isPartialRound) {
+        // Check if remainder is only specks (can't cut further) — auto-dismiss
+        if (this.canAutoDismissRemainder()) {
+          this.autoDismissRemainder();
+          return;
+        }
         this.distributeQueued = 0;
         this.state.phase = 'LEVEL_FAILED';
         Input.enabled = true;
@@ -214,7 +258,7 @@ const Game = {
           Render.showFailure();
         }
       } else if (this.distributeQueued > 0) {
-        const noPiecesLeft = this.state.wholePizzas === 0 && this.state.slices === 0 && this.state.bits === 0 && this.state.crumbs === 0 && this.state.specks === 0;
+        const noPiecesLeft = this.noPiecesLeft();
         if (noPiecesLeft) {
           this.distributeQueued = 0;
           this.state.phase = 'LEVEL_COMPLETE';
@@ -228,6 +272,29 @@ const Game = {
       } else {
         this.checkCompletion();
       }
+    });
+  },
+
+  noPiecesLeft() {
+    return this.state.wholePizzas === 0 && this.state.slices === 0 &&
+           this.state.bits === 0 && this.state.crumbs === 0 && this.state.specks === 0;
+  },
+
+  canAutoDismissRemainder() {
+    // Only auto-dismiss if remainder is exclusively specks (smallest unit, can't cut further)
+    return this.state.specks > 0 && this.state.wholePizzas === 0 &&
+           this.state.slices === 0 && this.state.bits === 0 && this.state.crumbs === 0;
+  },
+
+  autoDismissRemainder() {
+    // Animate remaining specks off screen, then complete the level
+    Sound.sparkle();
+    Render.animateDismissRemainder(this.state).then(() => {
+      this.state.specks = 0;
+      this.distributeQueued = 0;
+      this.state.phase = 'LEVEL_COMPLETE';
+      Input.enabled = true;
+      Render.showCelebration(this.state);
     });
   },
 
@@ -246,9 +313,7 @@ const Game = {
   },
 
   checkCompletion() {
-    const noPiecesLeft = this.state.wholePizzas === 0 && this.state.slices === 0 && this.state.bits === 0 && this.state.crumbs === 0 && this.state.specks === 0;
-
-    if (noPiecesLeft) {
+    if (this.noPiecesLeft()) {
       this.state.phase = 'LEVEL_COMPLETE';
       Input.enabled = true;
       Render.showCelebration(this.state);
@@ -279,7 +344,6 @@ const Game = {
       this.loadLevel(this.state.level + 1);
     } else if (this.state.phase === 'LEVEL_FAILED') {
       if (this.lives <= 0) {
-        // Game over — reset lives and level
         this.resetLives();
         this.loadLevel(1);
       } else {

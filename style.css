@@ -282,6 +282,38 @@ body {
   transform: translateX(20px);
 }
 
+/* Undo button */
+#undo-btn {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  z-index: 10;
+  background: var(--warm-white);
+  border: 2px solid var(--pizza-crust);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: var(--text-dark);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#undo-btn.visible {
+  opacity: 0.6;
+  pointer-events: auto;
+}
+
+#undo-btn:hover, #undo-btn:active {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
 .knife-blade {
   width: 8px;
   height: 80px;
@@ -506,6 +538,17 @@ body {
 }
 
 /* Distributed pieces — already opacity:0 from fly-to-mouse forwards fill */
+
+/* Dismiss remainder animation — pieces fly up and fade */
+@keyframes dismiss-fly {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-80px) scale(0.2); opacity: 0; }
+}
+
+.dismissing {
+  animation: dismiss-fly 0.5s ease-in forwards;
+  pointer-events: none;
+}
 
 /* Mouse tray */
 #mouse-tray {

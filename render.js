@@ -10,6 +10,7 @@ const Render = {
   livesDisplay: document.getElementById('lives-display'),
   gameOver: document.getElementById('game-over'),
   fractionDisplay: document.getElementById('fraction-display'),
+  undoBtn: document.getElementById('undo-btn'),
 
   drawState(state) {
     this.levelLabel.textContent = `Level ${state.level}`;
@@ -42,6 +43,14 @@ const Render = {
     if (this.livesDisplay) {
       this.livesDisplay.textContent = '\u2665'.repeat(Math.max(0, lives));
     }
+  },
+
+  showUndoBtn() {
+    if (this.undoBtn) this.undoBtn.classList.add('visible');
+  },
+
+  hideUndoBtn() {
+    if (this.undoBtn) this.undoBtn.classList.remove('visible');
   },
 
   drawPizzas(state) {
@@ -233,7 +242,7 @@ const Render = {
     });
   },
 
-  animateDistributeRound(state, toDistribute, isPartial, onMunch) {
+  animateDistributeRound(state, toDistribute, isPartial, onMunch, pieceDelay = 150) {
     return new Promise((resolve) => {
       const mouseEls = this.mouseTray.querySelectorAll('.mouse');
       const pizzaEls = Array.from(this.pizzaArea.querySelectorAll('.pizza:not(.distributed)'));
@@ -290,10 +299,29 @@ const Render = {
               }, 200);
             }
           }, 450);
-        }, i * 150);
+        }, i * pieceDelay);
       }
 
       if (toDistribute === 0) resolve();
+    });
+  },
+
+  animateDismissRemainder(state) {
+    return new Promise((resolve) => {
+      const pieces = this.pizzaArea.querySelectorAll('.speck:not(.distributed), .crumb:not(.distributed), .bit:not(.distributed), .slice:not(.distributed), .pizza:not(.distributed)');
+      if (pieces.length === 0) { resolve(); return; }
+
+      pieces.forEach((p, i) => {
+        setTimeout(() => {
+          p.classList.add('dismissing');
+        }, i * 20);
+      });
+
+      setTimeout(() => {
+        this.pizzaArea.innerHTML = '';
+        this.updateHeader(state);
+        resolve();
+      }, 600);
     });
   },
 
