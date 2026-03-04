@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pizza-math-v2';
+const CACHE_NAME = 'pizza-math-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -9,6 +9,9 @@ const ASSETS = [
   './levels.js',
   './sound.js',
   './manifest.json',
+  './assets/icon-192.png',
+  './assets/icon-512.png',
+  './assets/apple-touch-icon.png',
 ];
 
 self.addEventListener('install', (e) => {
