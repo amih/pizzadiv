@@ -12,7 +12,6 @@ const Game = {
   loadLevel(num) {
     const idx = num - 1;
     if (idx >= LEVELS.length) {
-      // Wrap around or show "all done" — for now, wrap
       return this.loadLevel(1);
     }
 
@@ -22,7 +21,6 @@ const Game = {
       wholePizzas: def.pizzas,
       slices: 0,
       mice: def.mice,
-      fedMice: 0,
       phase: 'READY',
     };
 
@@ -33,12 +31,11 @@ const Game = {
 
   handleCut() {
     if (this.state.phase !== 'READY') return;
-    if (this.state.wholePizzas === 0) return; // nothing to cut
+    if (this.state.wholePizzas === 0) return;
 
     this.state.phase = 'ANIMATING';
     Input.enabled = false;
 
-    // Convert whole pizzas to slices
     this.state.slices += this.state.wholePizzas * 10;
     this.state.wholePizzas = 0;
 
@@ -57,38 +54,41 @@ const Game = {
     this.state.phase = 'ANIMATING';
     Input.enabled = false;
 
-    const unfed = this.state.mice - this.state.fedMice;
-    const toFeed = Math.min(available, unfed);
-    const startFedIndex = this.state.fedMice;
+    // Each round: one piece per mouse (or fewer if not enough pieces)
+    const toDistribute = Math.min(available, this.state.mice);
 
-    // Determine which pieces get used: whole pizzas first, then slices
-    let piecesFromWhole = Math.min(this.state.wholePizzas, toFeed);
-    let piecesFromSlice = toFeed - piecesFromWhole;
+    // Use whole pizzas first, then slices
+    let fromWhole = Math.min(this.state.wholePizzas, toDistribute);
+    let fromSlice = toDistribute - fromWhole;
 
-    this.state.wholePizzas -= piecesFromWhole;
-    this.state.slices -= piecesFromSlice;
-    this.state.fedMice += toFeed;
+    this.state.wholePizzas -= fromWhole;
+    this.state.slices -= fromSlice;
 
-    Render.animateDistribute(this.state, toFeed, startFedIndex, () => Sound.munch()).then(() => {
-      this.checkCompletion();
+    // Partial round = failure (not enough pieces for all mice)
+    const isPartialRound = toDistribute < this.state.mice;
+
+    Render.animateDistributeRound(this.state, toDistribute, isPartialRound, () => Sound.munch()).then(() => {
+      if (isPartialRound) {
+        // Some mice didn't get food this round
+        this.state.phase = 'LEVEL_FAILED';
+        Input.enabled = true;
+        Sound.cry();
+        Render.showFailure();
+      } else {
+        this.checkCompletion();
+      }
     });
   },
 
   checkCompletion() {
-    const allFed = this.state.fedMice >= this.state.mice;
     const noPiecesLeft = this.state.wholePizzas === 0 && this.state.slices === 0;
 
-    if (allFed) {
+    if (noPiecesLeft) {
       this.state.phase = 'LEVEL_COMPLETE';
       Input.enabled = true;
       Render.showCelebration();
-    } else if (noPiecesLeft) {
-      // Out of food, hungry mice remain → failure
-      this.state.phase = 'LEVEL_FAILED';
-      Input.enabled = true;
-      Sound.cry();
-      Render.showFailure();
     } else {
+      // More pieces remain — player needs to distribute again
       this.state.phase = 'READY';
       Input.enabled = true;
     }

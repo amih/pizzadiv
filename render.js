@@ -9,8 +9,15 @@ const Render = {
 
   drawState(state) {
     this.levelLabel.textContent = `Level ${state.level}`;
-    const total = state.wholePizzas + Math.ceil(state.slices / 10);
-    this.pizzaCount.textContent = `\u{1F355} \u00D7 ${total || state.slices + ' slices'}`;
+    if (state.wholePizzas > 0 && state.slices === 0) {
+      this.pizzaCount.textContent = `\u{1F355} \u00D7 ${state.wholePizzas}`;
+    } else if (state.wholePizzas === 0 && state.slices > 0) {
+      this.pizzaCount.textContent = `${state.slices} slices`;
+    } else if (state.wholePizzas > 0 && state.slices > 0) {
+      this.pizzaCount.textContent = `\u{1F355} \u00D7 ${state.wholePizzas} + ${state.slices} slices`;
+    } else {
+      this.pizzaCount.textContent = 'All gone!';
+    }
     this.drawPizzas(state);
     this.drawMice(state);
   },
@@ -54,7 +61,7 @@ const Render = {
     this.mouseTray.innerHTML = '';
     for (let i = 0; i < state.mice; i++) {
       const mouse = document.createElement('div');
-      mouse.className = 'mouse' + (i < state.fedMice ? ' fed' : '');
+      mouse.className = 'mouse';
       mouse.dataset.index = i;
       mouse.innerHTML = `
         <div class="mouse-ears">
@@ -105,7 +112,8 @@ const Render = {
     });
   },
 
-  animateDistribute(state, piecesUsed, startFedIndex, onMunch) {
+  // Each round: one piece flies to each mouse (0..toDistribute-1)
+  animateDistributeRound(state, toDistribute, isPartial, onMunch) {
     return new Promise((resolve) => {
       const mouseEls = this.mouseTray.querySelectorAll('.mouse');
       const pizzaEls = Array.from(this.pizzaArea.querySelectorAll('.pizza'));
@@ -114,9 +122,9 @@ const Render = {
 
       let animated = 0;
 
-      for (let i = 0; i < piecesUsed; i++) {
+      for (let i = 0; i < toDistribute; i++) {
         const piece = allPieces[i];
-        const mouseEl = mouseEls[startFedIndex + i];
+        const mouseEl = mouseEls[i];
         if (!piece || !mouseEl) continue;
 
         const pieceRect = piece.getBoundingClientRect();
@@ -131,12 +139,12 @@ const Render = {
           piece.classList.add('distributing');
 
           setTimeout(() => {
-            mouseEl.classList.add('fed', 'eating');
+            mouseEl.classList.add('eating');
             if (onMunch) onMunch();
             setTimeout(() => mouseEl.classList.remove('eating'), 400);
 
             animated++;
-            if (animated === piecesUsed) {
+            if (animated === toDistribute) {
               setTimeout(() => {
                 this.drawState(state);
                 resolve();
@@ -146,7 +154,7 @@ const Render = {
         }, i * 150);
       }
 
-      if (piecesUsed === 0) resolve();
+      if (toDistribute === 0) resolve();
     });
   },
 
@@ -165,8 +173,8 @@ const Render = {
   },
 
   showFailure() {
-    // Make unfed mice cry
-    const mice = this.mouseTray.querySelectorAll('.mouse:not(.fed)');
+    // Make mice that didn't get food cry
+    const mice = this.mouseTray.querySelectorAll('.mouse:not(.eating)');
     mice.forEach((m) => {
       m.classList.add('crying');
       const body = m.querySelector('.mouse-body');
