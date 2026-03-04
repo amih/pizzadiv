@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pizza-math-v3';
+const CACHE_NAME = 'pizza-math-v4';
 const ASSETS = [
   './',
   './index.html',

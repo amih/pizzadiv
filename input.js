@@ -17,6 +17,11 @@ const Input = {
     game.addEventListener('mousedown', (e) => this.handleStart(e));
     game.addEventListener('mousemove', (e) => { if (this.tracking) this.handleMove(e); });
     game.addEventListener('mouseup', (e) => this.handleEnd(e));
+
+    // Overlays capture their own taps (they sit on top and block game events)
+    const overlayTap = () => { if (this.onCelebrationTap) this.onCelebrationTap(); };
+    document.getElementById('celebration').addEventListener('click', overlayTap);
+    document.getElementById('failure').addEventListener('click', overlayTap);
   },
 
   handleStart(point) {
