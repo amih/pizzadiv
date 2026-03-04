@@ -1,5 +1,6 @@
 const Game = {
   state: null,
+  distributeQueued: false,
 
   init() {
     const saved = localStorage.getItem('pizzamath_level');
@@ -24,6 +25,7 @@ const Game = {
     if (num < 1) num = 1;
 
     const def = LEVELS[idx];
+    this.distributeQueued = false;
     this.state = {
       level: num,
       wholePizzas: def.pizzas,
@@ -54,7 +56,7 @@ const Game = {
       this.state.wholePizzas = 0;
       Sound.slice();
       Render.animateCut(this.state, 'pizza').then(() => {
-        this.checkCompletion();
+        this.afterAnimating();
       });
     } else if (this.state.slices > 0) {
       this.state.phase = 'ANIMATING';
@@ -63,13 +65,29 @@ const Game = {
       this.state.slices = 0;
       Sound.slice();
       Render.animateCut(this.state, 'slice').then(() => {
-        this.checkCompletion();
+        this.afterAnimating();
       });
     }
   },
 
   handleDistribute() {
+    // Queue distribute if already animating
+    if (this.state.phase === 'ANIMATING') {
+      if (!this.distributeQueued) {
+        this.distributeQueued = true;
+        Sound.confirm();
+        Render.pulseMouseTray();
+      }
+      return;
+    }
+
     if (this.state.phase !== 'READY') return;
+
+    this.executeDistribute();
+  },
+
+  executeDistribute() {
+    this.distributeQueued = false;
 
     const available = this.state.wholePizzas + this.state.slices + this.state.bits;
     if (available === 0) return;
@@ -92,23 +110,47 @@ const Game = {
 
     const isPartialRound = toDistribute < this.state.mice;
 
-    console.log('distribute v1.3.0:', { toDistribute, fromWhole, fromSlice, fromBits, state: JSON.stringify(this.state) });
-
     Render.animateDistributeRound(this.state, toDistribute, isPartialRound, () => Sound.munch()).then(() => {
       if (isPartialRound) {
+        this.distributeQueued = false;
         this.state.phase = 'LEVEL_FAILED';
         Input.enabled = true;
         Sound.cry();
         Render.showFailure();
+      } else if (this.distributeQueued) {
+        // Process queued distribute — first check completion of this round
+        const noPiecesLeft = this.state.wholePizzas === 0 && this.state.slices === 0 && this.state.bits === 0;
+        if (noPiecesLeft) {
+          this.distributeQueued = false;
+          this.state.phase = 'LEVEL_COMPLETE';
+          Input.enabled = true;
+          Render.showCelebration();
+        } else {
+          this.state.phase = 'READY';
+          Input.enabled = true;
+          Render.drawState(this.state);
+          this.executeDistribute();
+        }
       } else {
         this.checkCompletion();
       }
     });
   },
 
+  afterAnimating() {
+    if (this.distributeQueued) {
+      this.state.phase = 'READY';
+      Input.enabled = true;
+      Render.drawState(this.state);
+      this.executeDistribute();
+    } else {
+      this.checkCompletion();
+    }
+  },
+
   checkCompletion() {
     const noPiecesLeft = this.state.wholePizzas === 0 && this.state.slices === 0 && this.state.bits === 0;
-    console.log('checkCompletion v1.3.0:', JSON.stringify({ noPiecesLeft, wholePizzas: this.state.wholePizzas, slices: this.state.slices, bits: this.state.bits }));
+    console.log('checkCompletion v1.4.0:', JSON.stringify({ noPiecesLeft, wholePizzas: this.state.wholePizzas, slices: this.state.slices, bits: this.state.bits }));
 
     if (noPiecesLeft) {
       this.state.phase = 'LEVEL_COMPLETE';

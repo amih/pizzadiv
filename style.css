@@ -428,15 +428,68 @@ body {
 #mouse-tray {
   min-height: 20%;
   max-height: 25%;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  justify-items: center;
   align-items: center;
   justify-content: center;
+  align-content: center;
   gap: 8px;
   padding: 12px 16px;
   background: linear-gradient(0deg, rgba(244, 168, 61, 0.08), transparent);
   border-top: 3px solid var(--pizza-crust);
   overflow-y: auto;
+}
+
+/* Subitizing patterns per mouse count */
+#mouse-tray[data-count="1"] {
+  grid-template-columns: 1fr;
+}
+
+#mouse-tray[data-count="2"] {
+  grid-template-columns: repeat(2, auto);
+}
+
+#mouse-tray[data-count="3"] {
+  grid-template-columns: repeat(2, auto);
+}
+
+#mouse-tray[data-count="4"] {
+  grid-template-columns: repeat(2, auto);
+}
+
+#mouse-tray[data-count="5"] {
+  grid-template-columns: repeat(3, auto);
+}
+
+#mouse-tray[data-count="6"] {
+  grid-template-columns: repeat(3, auto);
+}
+
+#mouse-tray[data-count="7"] {
+  grid-template-columns: repeat(3, auto);
+}
+
+#mouse-tray[data-count="8"] {
+  grid-template-columns: repeat(4, auto);
+}
+
+#mouse-tray[data-count="9"] {
+  grid-template-columns: repeat(3, auto);
+}
+
+#mouse-tray[data-count="10"] {
+  grid-template-columns: repeat(5, auto);
+}
+
+/* Queued distribute pulse */
+@keyframes tray-pulse {
+  0% { background-color: rgba(165, 214, 167, 0); }
+  30% { background-color: rgba(165, 214, 167, 0.35); }
+  100% { background-color: rgba(165, 214, 167, 0); }
+}
+
+#mouse-tray.queued-pulse {
+  animation: tray-pulse 0.4s ease-out;
 }
 
 /* Mouse */

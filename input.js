@@ -25,7 +25,6 @@ const Input = {
   },
 
   handleStart(point) {
-    if (!this.enabled) return;
     this.startX = point.clientX;
     this.startY = point.clientY;
     this.tracking = true;
@@ -37,10 +36,10 @@ const Input = {
   },
 
   handleMove(point) {
-    if (!this.tracking || !this.enabled) return;
+    if (!this.tracking) return;
 
     const dx = point.clientX - this.startX;
-    if (this.startedInKnife && dx > 20) {
+    if (this.enabled && this.startedInKnife && dx > 20) {
       document.getElementById('knife').classList.add('swiping');
     } else {
       document.getElementById('knife').classList.remove('swiping');
@@ -51,8 +50,6 @@ const Input = {
     if (!this.tracking) return;
     this.tracking = false;
     document.getElementById('knife').classList.remove('swiping');
-
-    if (!this.enabled) return;
 
     const dx = point.clientX - this.startX;
     const dy = point.clientY - this.startY;
@@ -67,15 +64,18 @@ const Input = {
       return;
     }
 
-    // Swipe right from knife zone → CUT
-    if (this.startedInKnife && dx > 50 && adx > ady) {
-      if (this.onCut) this.onCut();
+    // Swipe down on pizza area → DISTRIBUTE (allowed even during animation)
+    if (dy > 50 && ady > adx && !this.startedInKnife) {
+      if (this.onDistribute) this.onDistribute();
       return;
     }
 
-    // Swipe down on pizza area → DISTRIBUTE
-    if (dy > 50 && ady > adx && !this.startedInKnife) {
-      if (this.onDistribute) this.onDistribute();
+    // Everything else requires enabled
+    if (!this.enabled) return;
+
+    // Swipe right from knife zone → CUT
+    if (this.startedInKnife && dx > 50 && adx > ady) {
+      if (this.onCut) this.onCut();
       return;
     }
   },

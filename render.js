@@ -82,6 +82,8 @@ const Render = {
 
   drawMice(state) {
     this.mouseTray.innerHTML = '';
+    this.mouseTray.dataset.count = state.mice;
+
     for (let i = 0; i < state.mice; i++) {
       const mouse = document.createElement('div');
       mouse.className = 'mouse';
@@ -105,8 +107,43 @@ const Render = {
           </div>
         </div>
       `;
+
+      // Position mice for odd subitizing patterns
+      if (state.mice === 3 && i === 0) {
+        // Triangle: first mouse centered across 2 columns
+        mouse.style.gridColumn = '1 / 3';
+        mouse.style.justifySelf = 'center';
+      } else if (state.mice === 5) {
+        // Quincunx on 3-col grid: corners + center
+        // Row 1: col 1, col 3; Row 2: col 2; Row 3: col 1, col 3
+        const positions = [
+          { col: '1', row: '1' },
+          { col: '3', row: '1' },
+          { col: '2', row: '2' },
+          { col: '1', row: '3' },
+          { col: '3', row: '3' },
+        ];
+        mouse.style.gridColumn = positions[i].col;
+        mouse.style.gridRow = positions[i].row;
+      } else if (state.mice === 7) {
+        // 3 top, 1 centered, 3 bottom
+        if (i === 3) {
+          mouse.style.gridColumn = '1 / 4';
+          mouse.style.justifySelf = 'center';
+        }
+      }
+
       this.mouseTray.appendChild(mouse);
     }
+  },
+
+  pulseMouseTray() {
+    this.mouseTray.classList.remove('queued-pulse');
+    void this.mouseTray.offsetWidth;
+    this.mouseTray.classList.add('queued-pulse');
+    this.mouseTray.addEventListener('animationend', () => {
+      this.mouseTray.classList.remove('queued-pulse');
+    }, { once: true });
   },
 
   animateCut(state, what) {
