@@ -14,82 +14,93 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=1.0.0">
 </head>
 <body>
-  <div id="game">
-    <header id="header">
-      <span id="level-label">Level 1</span>
-      <span id="pizza-count">&#127829; × 1</span>
-      <button id="settings-btn" aria-label="Settings">&#9881;</button>
-    </header>
-    <div id="settings" class="hidden">
-      <div class="settings-panel">
-        <div class="settings-title">Settings</div>
-        <button id="refresh-btn" class="settings-item">Update Game</button>
-        <button id="settings-close" class="settings-item settings-close">Close</button>
-      </div>
-    </div>
-    <div id="play-area">
-      <div id="knife-zone">
-        <div id="knife">
-          <div class="knife-blade"></div>
-          <div class="knife-handle"></div>
+  <div id="app">
+    <!-- GAME PAGE -->
+    <div id="game" class="page active">
+      <header id="header">
+        <span id="level-label">Level 1</span>
+        <span id="pizza-count">&#127829; × 1</span>
+        <button id="settings-btn" aria-label="Settings">&#9881;</button>
+      </header>
+      <div id="play-area">
+        <div id="knife-zone">
+          <div id="knife">
+            <div class="knife-blade"></div>
+            <div class="knife-handle"></div>
+          </div>
         </div>
+        <div id="pizza-area"></div>
       </div>
-      <div id="pizza-area"></div>
+      <div id="mouse-tray"></div>
+      <div id="celebration" class="hidden">
+        <div class="celebration-text">Level Complete!</div>
+        <div class="celebration-sub">Tap to continue</div>
+      </div>
+      <div id="failure" class="hidden">
+        <div class="failure-text">Oh no!</div>
+        <div class="failure-sub">Some mice are still hungry...</div>
+        <div class="failure-tap">Tap to try again</div>
+      </div>
     </div>
-    <div id="mouse-tray"></div>
-    <div id="celebration" class="hidden">
-      <div class="celebration-text">Level Complete!</div>
-      <div class="celebration-sub">Tap to continue</div>
-    </div>
-    <div id="failure" class="hidden">
-      <div class="failure-text">Oh no!</div>
-      <div class="failure-sub">Some mice are still hungry...</div>
-      <div class="failure-tap">Tap to try again</div>
+
+    <!-- SETTINGS PAGE -->
+    <div id="settings-page" class="page">
+      <header class="settings-header">
+        <button id="settings-back" aria-label="Back">&#8592; Back</button>
+        <span>Settings</span>
+      </header>
+      <div class="settings-body">
+        <button id="refresh-btn" class="settings-item">Update Game</button>
+        <div class="settings-version" id="version-label"></div>
+      </div>
     </div>
   </div>
 
-  <script src="sound.js"></script>
-  <script src="levels.js"></script>
-  <script src="render.js"></script>
-  <script src="input.js"></script>
-  <script src="game.js"></script>
+  <script src="version.js?v=1.0.0"></script>
+  <script src="sound.js?v=1.0.0"></script>
+  <script src="levels.js?v=1.0.0"></script>
+  <script src="render.js?v=1.0.0"></script>
+  <script src="input.js?v=1.0.0"></script>
+  <script src="game.js?v=1.0.0"></script>
   <script>
+    console.log('Pizza Math v' + APP_VERSION);
+    document.getElementById('version-label').textContent = 'Version ' + APP_VERSION;
+
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').then((reg) => {
         reg.update();
       });
     }
 
-    // Settings menu
-    const settingsEl = document.getElementById('settings');
+    // Page navigation
+    function showPage(id) {
+      document.querySelectorAll('.page').forEach((p) => p.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
     document.getElementById('settings-btn').addEventListener('click', (e) => {
       e.stopPropagation();
-      settingsEl.classList.remove('hidden');
-      void settingsEl.offsetWidth;
-      settingsEl.classList.add('visible');
+      showPage('settings-page');
     });
-    document.getElementById('settings-close').addEventListener('click', () => {
-      settingsEl.classList.remove('visible');
-      settingsEl.classList.add('hidden');
+    document.getElementById('settings-back').addEventListener('click', () => {
+      showPage('game');
     });
+
     document.getElementById('refresh-btn').addEventListener('click', async () => {
       const btn = document.getElementById('refresh-btn');
       btn.textContent = 'Updating...';
       btn.disabled = true;
-      // Clear all SW caches
       if ('caches' in window) {
         const keys = await caches.keys();
         await Promise.all(keys.map((k) => caches.delete(k)));
       }
-      // Unregister service worker
       if ('serviceWorker' in navigator) {
         const regs = await navigator.serviceWorker.getRegistrations();
         await Promise.all(regs.map((r) => r.unregister()));
       }
-      // Hard reload
       window.location.reload(true);
     });
   </script>

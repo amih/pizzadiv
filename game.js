@@ -82,6 +82,7 @@ const Game = {
 
   checkCompletion() {
     const noPiecesLeft = this.state.wholePizzas === 0 && this.state.slices === 0;
+    console.log('checkCompletion:', { noPiecesLeft, wholePizzas: this.state.wholePizzas, slices: this.state.slices });
 
     if (noPiecesLeft) {
       this.state.phase = 'LEVEL_COMPLETE';
