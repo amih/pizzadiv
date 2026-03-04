@@ -205,6 +205,15 @@ body {
   transform: scale(1.02);
 }
 
+.settings-danger {
+  border-color: var(--pizza-sauce);
+  color: var(--pizza-sauce);
+}
+
+.settings-danger:hover, .settings-danger:active {
+  background: #FFEBEE;
+}
+
 .settings-version {
   font-size: 0.9rem;
   color: #aaa;

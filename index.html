@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=1.2.0">
+  <link rel="stylesheet" href="style.css?v=1.3.0">
 </head>
 <body>
   <div id="app">
@@ -61,18 +61,19 @@
         <span>Settings</span>
       </header>
       <div class="settings-body">
+        <button id="reset-btn" class="settings-item settings-danger">Reset to Level 1</button>
         <button id="refresh-btn" class="settings-item">Update Game</button>
         <div class="settings-version" id="version-label"></div>
       </div>
     </div>
   </div>
 
-  <script src="version.js?v=1.2.0"></script>
-  <script src="sound.js?v=1.2.0"></script>
-  <script src="levels.js?v=1.2.0"></script>
-  <script src="render.js?v=1.2.0"></script>
-  <script src="input.js?v=1.2.0"></script>
-  <script src="game.js?v=1.2.0"></script>
+  <script src="version.js?v=1.3.0"></script>
+  <script src="sound.js?v=1.3.0"></script>
+  <script src="levels.js?v=1.3.0"></script>
+  <script src="render.js?v=1.3.0"></script>
+  <script src="input.js?v=1.3.0"></script>
+  <script src="game.js?v=1.3.0"></script>
   <script>
     console.log('Pizza Math v' + APP_VERSION);
     document.getElementById('version-label').textContent = 'Version ' + APP_VERSION;
@@ -93,6 +94,11 @@
       showPage('settings-page');
     });
     document.getElementById('settings-back').addEventListener('click', () => {
+      showPage('game');
+    });
+
+    document.getElementById('reset-btn').addEventListener('click', () => {
+      Game.resetToLevel1();
       showPage('game');
     });
 

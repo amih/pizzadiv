@@ -2,38 +2,51 @@ const Game = {
   state: null,
 
   init() {
-    this.loadLevel(1);
+    const saved = localStorage.getItem('pizzamath_level');
+    const startLevel = saved ? parseInt(saved, 10) : 1;
+    this.loadLevel(startLevel);
     Input.init();
     Input.onCut = () => this.handleCut();
     Input.onDistribute = () => this.handleDistribute();
     Input.onCelebrationTap = () => this.handleOverlayTap();
   },
 
+  saveLevel(num) {
+    localStorage.setItem('pizzamath_level', num);
+  },
+
   loadLevel(num) {
     const idx = num - 1;
     if (idx >= LEVELS.length) {
-      return this.loadLevel(1);
+      // All levels done — stay on last level complete or wrap
+      return this.loadLevel(LEVELS.length);
     }
+    if (num < 1) num = 1;
 
     const def = LEVELS[idx];
     this.state = {
       level: num,
       wholePizzas: def.pizzas,
       slices: 0,
-      bits: 0,         // 1/100 of a pizza (slice cut into 10)
+      bits: 0,
       mice: def.mice,
       phase: 'READY',
     };
 
+    this.saveLevel(num);
     Render.hideCelebration();
     Render.hideFailure();
     Render.drawState(this.state);
   },
 
+  resetToLevel1() {
+    localStorage.removeItem('pizzamath_level');
+    this.loadLevel(1);
+  },
+
   handleCut() {
     if (this.state.phase !== 'READY') return;
 
-    // Cut largest available: whole pizzas → slices, or slices → bits
     if (this.state.wholePizzas > 0) {
       this.state.phase = 'ANIMATING';
       Input.enabled = false;
@@ -53,7 +66,6 @@ const Game = {
         this.checkCompletion();
       });
     }
-    // bits can't be cut further (for now)
   },
 
   handleDistribute() {
@@ -67,7 +79,6 @@ const Game = {
 
     const toDistribute = Math.min(available, this.state.mice);
 
-    // Use whole pizzas first, then slices, then bits
     let remaining = toDistribute;
     let fromWhole = Math.min(this.state.wholePizzas, remaining);
     remaining -= fromWhole;
@@ -81,7 +92,7 @@ const Game = {
 
     const isPartialRound = toDistribute < this.state.mice;
 
-    console.log('distribute:', { toDistribute, fromWhole, fromSlice, fromBits, remaining: this.state });
+    console.log('distribute v1.3.0:', { toDistribute, fromWhole, fromSlice, fromBits, state: JSON.stringify(this.state) });
 
     Render.animateDistributeRound(this.state, toDistribute, isPartialRound, () => Sound.munch()).then(() => {
       if (isPartialRound) {
@@ -97,7 +108,7 @@ const Game = {
 
   checkCompletion() {
     const noPiecesLeft = this.state.wholePizzas === 0 && this.state.slices === 0 && this.state.bits === 0;
-    console.log('checkCompletion v1.1.0:', { noPiecesLeft, wholePizzas: this.state.wholePizzas, slices: this.state.slices, bits: this.state.bits });
+    console.log('checkCompletion v1.3.0:', JSON.stringify({ noPiecesLeft, wholePizzas: this.state.wholePizzas, slices: this.state.slices, bits: this.state.bits }));
 
     if (noPiecesLeft) {
       this.state.phase = 'LEVEL_COMPLETE';
