@@ -178,7 +178,7 @@ const Render = {
   // Multi-step cut animation: sequential cut lines on each pizza one at a time
   animateMultiStepCut(state, cutDepth, factors, pieceCount) {
     return new Promise((resolve) => {
-      const targetSel = cutDepth === 0 ? '.pizza' : `.piece.depth-${cutDepth}`;
+      const targetSel = cutDepth === 0 ? '.pizza:not(.distributed)' : `.piece.depth-${cutDepth}:not(.distributed)`;
       const targets = Array.from(this.pizzaArea.querySelectorAll(targetSel));
       const divisor = state.divisor;
       const numCuts = divisor - 1;
