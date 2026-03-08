@@ -14,6 +14,6 @@ Use semver: patch for fixes, minor for features, major for breaking changes.
 
 After making any changes to the game, ALWAYS:
 1. Bump the version number (see above)
-2. Run `cd /home/ami/dev/pizza-math && bash deploy.sh` to deploy to production
+2. Run `cd /home/ami/dev/pizzadiv && bash deploy.sh` to deploy to production
 
 This must happen every time code is changed so the user can test on their phone.

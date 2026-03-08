@@ -1,4 +1,4 @@
-# Pizza Math
+# Pizza Div
 
 A math game that teaches kids long division through pizza sharing. No math symbols — just play.
 
