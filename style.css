@@ -259,7 +259,7 @@ body {
   display: flex;
   min-height: 0;
   position: relative;
-  overflow: hidden;
+  z-index: 2;
 }
 
 #knife-zone {
@@ -350,7 +350,7 @@ body {
   gap: 16px;
   padding: 16px;
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 /* Pizza */
@@ -493,6 +493,35 @@ body {
   pointer-events: none;
   animation: shing 0.4s ease-out forwards;
   z-index: 5;
+}
+
+/* Sequential cut lines */
+.cut-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 5%, var(--knife-blade) 15%, #E8E8E8 50%, var(--knife-blade) 85%, transparent 95%);
+  z-index: 10;
+  pointer-events: none;
+  animation: cut-line-appear 0.12s ease-out forwards;
+  transform-origin: left center;
+}
+
+@keyframes cut-line-appear {
+  0% { transform: scaleX(0); opacity: 0.5; }
+  100% { transform: scaleX(1); opacity: 1; }
+}
+
+/* Mini knife sweep for sequential cuts */
+@keyframes knife-step {
+  0% { transform: translateX(0); }
+  40% { transform: translateX(40px); }
+  100% { transform: translateX(0); }
+}
+
+#knife.cutting-step {
+  animation: knife-step 0.12s ease-in-out;
 }
 
 /* Distribute animation */
@@ -889,6 +918,13 @@ body {
   padding: 6px 8px;
 }
 
+.fraction-bottom.subitized {
+  display: block;
+  position: relative;
+  gap: 0;
+  padding: 4px;
+}
+
 .fraction-line {
   width: 100%;
   height: 3px;
@@ -898,6 +934,41 @@ body {
 
 .fraction-equals {
   font-size: 2rem;
+  font-weight: 900;
+  color: var(--text-dark);
+}
+
+/* Cuts display in celebration */
+.cuts-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.mini-knife-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.mk-blade {
+  width: 5px;
+  height: 22px;
+  background: linear-gradient(180deg, #CFD8DC, var(--knife-blade), #90A4AE);
+  border-radius: 2px 2px 1px 1px;
+}
+
+.mk-handle {
+  width: 10px;
+  height: 12px;
+  background: linear-gradient(90deg, #5D4037, var(--knife-handle), #5D4037);
+  border-radius: 2px;
+  margin-top: -1px;
+}
+
+.cuts-count {
+  font-size: 1.1rem;
   font-weight: 900;
   color: var(--text-dark);
 }

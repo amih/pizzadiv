@@ -15,5 +15,6 @@ Use semver: patch for fixes, minor for features, major for breaking changes.
 After making any changes to the game, ALWAYS:
 1. Bump the version number (see above)
 2. Run `cd /home/ami/dev/pizzadiv && bash deploy.sh` to deploy to production
+3. Commit and push to git
 
 This must happen every time code is changed so the user can test on their phone.

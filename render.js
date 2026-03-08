@@ -175,33 +175,53 @@ const Render = {
     });
   },
 
-  // Multi-step cut animation: factors applied one at a time
+  // Multi-step cut animation: sequential cut lines on each pizza one at a time
   animateMultiStepCut(state, cutDepth, factors, pieceCount) {
     return new Promise((resolve) => {
-      // Knife sweep
-      this.knife.classList.add('cutting');
-
-      // Shing effect on targets
       const targetSel = cutDepth === 0 ? '.pizza' : `.piece.depth-${cutDepth}`;
-      const targets = this.pizzaArea.querySelectorAll(targetSel);
+      const targets = Array.from(this.pizzaArea.querySelectorAll(targetSel));
+      const divisor = state.divisor;
+      const numCuts = divisor - 1;
+      const lineInterval = 150;
+
+      // Process each target sequentially, with numCuts lines each
+      let delay = 0;
+      targets.forEach((target) => {
+        for (let i = 0; i < numCuts; i++) {
+          setTimeout(() => {
+            this.knife.classList.remove('cutting-step');
+            void this.knife.offsetWidth;
+            this.knife.classList.add('cutting-step');
+
+            const line = document.createElement('div');
+            line.className = 'cut-line';
+            line.style.top = ((i + 1) / divisor * 100) + '%';
+            target.appendChild(line);
+          }, delay);
+          delay += lineInterval;
+        }
+      });
+
+      const totalLineTime = delay;
+
+      // Shing effect after all lines
       setTimeout(() => {
         targets.forEach((el) => {
           const shing = document.createElement('div');
           shing.className = 'shing-effect';
           el.appendChild(shing);
         });
-      }, 150);
+      }, totalLineTime + 100);
 
+      // Redraw with new state
       setTimeout(() => {
-        this.knife.classList.remove('cutting');
-        // Redraw with new state
+        this.knife.classList.remove('cutting-step');
         this.drawPizzas(state);
-        // Add cutting animation class to new groups
         const newGroups = this.pizzaArea.querySelectorAll('.piece-group');
         newGroups.forEach((g) => g.classList.add('cutting'));
         this.updateHeader(state);
         setTimeout(resolve, 500);
-      }, 500);
+      }, totalLineTime + 400);
     });
   },
 
@@ -306,6 +326,21 @@ const Render = {
       const pizzas = def.pizzas;
       const mice = def.mice;
       const divisor = def.divisor;
+      const cuts = Game.cutHistory.length + 1;
+
+      // Cuts display (knife icon + count)
+      let cutsHTML = '';
+      if (cuts > 0) {
+        cutsHTML = `
+          <div class="cuts-display">
+            <div class="mini-knife-icon">
+              <div class="mk-blade"></div>
+              <div class="mk-handle"></div>
+            </div>
+            <span class="cuts-count">&times; ${cuts}</span>
+          </div>
+        `;
+      }
 
       let topHTML = '';
       for (let i = 0; i < pizzas; i++) {
@@ -332,6 +367,7 @@ const Render = {
       });
 
       this.fractionDisplay.innerHTML = `
+        ${cutsHTML}
         <div class="fraction">
           <div class="fraction-top">${topHTML}</div>
           <div class="fraction-line"></div>
@@ -340,6 +376,17 @@ const Render = {
         <div class="fraction-equals">=</div>
         <div class="fraction-result-pieces">${resultHTML}</div>
       `;
+
+      // Apply subitizing pattern to mice in denominator
+      const fractionBottom = this.fractionDisplay.querySelector('.fraction-bottom');
+      if (mice >= 2 && mice <= 10) {
+        fractionBottom.classList.add('subitized');
+        const w = Math.max(50, Math.min(110, mice * 18));
+        const h = mice <= 2 ? 30 : (mice <= 5 ? 45 : 55);
+        fractionBottom.style.width = w + 'px';
+        fractionBottom.style.height = h + 'px';
+        applyPattern(fractionBottom, mice, 18);
+      }
     }
 
     this.celebration.classList.remove('hidden');
