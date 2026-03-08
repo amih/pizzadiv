@@ -29,7 +29,7 @@ const Game = {
 
   async loadLevelsData() {
     try {
-      const resp = await fetch('levels.json');
+      const resp = await fetch('levels.json?v=' + APP_VERSION);
       this.levels = await resp.json();
     } catch (e) {
       console.error('Failed to load levels.json', e);
