@@ -326,18 +326,19 @@ const Render = {
       const pizzas = def.pizzas;
       const mice = def.mice;
       const divisor = def.divisor;
-      const cuts = Game.cutHistory.length + 1;
+      const numCuts = Game.cutHistory.length;
+      const totalPieces = pizzas * Math.pow(divisor, numCuts);
 
-      // Cuts display (knife icon + count)
+      // Cuts display (knife icon + piece count)
       let cutsHTML = '';
-      if (cuts > 0) {
+      if (numCuts > 0) {
         cutsHTML = `
           <div class="cuts-display">
             <div class="mini-knife-icon">
               <div class="mk-blade"></div>
               <div class="mk-handle"></div>
             </div>
-            <span class="cuts-count">&times; ${cuts}</span>
+            <span class="cuts-count">&times; ${totalPieces}</span>
           </div>
         `;
       }
