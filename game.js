@@ -7,9 +7,11 @@ const Game = {
   lives: 3,
   distributeTimes: [],
   fastMode: false,
+  levels: [],
 
-  init() {
+  async init() {
     this.loadLives();
+    await this.loadLevelsData();
     const saved = localStorage.getItem('pizzadiv_level');
     const startLevel = saved ? parseInt(saved, 10) : 1;
     this.loadLevel(startLevel);
@@ -23,6 +25,16 @@ const Game = {
       e.stopPropagation();
       this.handleUndo();
     });
+  },
+
+  async loadLevelsData() {
+    try {
+      const resp = await fetch('levels.json');
+      this.levels = await resp.json();
+    } catch (e) {
+      console.error('Failed to load levels.json', e);
+      this.levels = [{ pizzas: 1, mice: 1, divisor: 2 }];
+    }
   },
 
   saveLives() {
@@ -46,12 +58,12 @@ const Game = {
 
   loadLevel(num) {
     const idx = num - 1;
-    if (idx >= LEVELS.length) {
-      return this.loadLevel(LEVELS.length);
+    if (idx >= this.levels.length) {
+      return this.loadLevel(this.levels.length);
     }
     if (num < 1) num = 1;
 
-    const def = LEVELS[idx];
+    const def = this.levels[idx];
     this.distributeQueued = 0;
     this.cutQueued = 0;
     this.cutHistory = [];
@@ -60,11 +72,8 @@ const Game = {
     this.fastMode = false;
     this.state = {
       level: num,
-      wholePizzas: def.pizzas,
-      slices: 0,
-      bits: 0,
-      crumbs: 0,
-      specks: 0,
+      divisor: def.divisor,
+      pieces: [def.pizzas, 0, 0, 0, 0], // depth 0=whole, 1-4=subdivisions
       mice: def.mice,
       phase: 'READY',
     };
@@ -95,11 +104,7 @@ const Game = {
   handleUndo() {
     if (this.cutHistory.length === 0 || this.hasDistributed || this.state.phase !== 'READY') return;
     const prev = this.cutHistory.pop();
-    this.state.wholePizzas = prev.wholePizzas;
-    this.state.slices = prev.slices;
-    this.state.bits = prev.bits;
-    this.state.crumbs = prev.crumbs;
-    this.state.specks = prev.specks;
+    this.state.pieces = prev.pieces.slice();
     Render.drawPizzas(this.state);
     Render.updateHeader(this.state);
     this.updateUndoBtn();
@@ -117,81 +122,75 @@ const Game = {
     this.executeCut();
   },
 
+  // Get prime factors of divisor, sorted largest first
+  primeFactors(n) {
+    const factors = [];
+    let d = 2;
+    while (d * d <= n) {
+      while (n % d === 0) {
+        factors.push(d);
+        n /= d;
+      }
+      d++;
+    }
+    if (n > 1) factors.push(n);
+    factors.sort((a, b) => b - a);
+    return factors;
+  },
+
   executeCut() {
     if (this.cutQueued > 0) this.cutQueued--;
 
+    // Find first non-zero depth to cut
+    let cutDepth = -1;
+    for (let i = 0; i < this.state.pieces.length - 1; i++) {
+      if (this.state.pieces[i] > 0) {
+        cutDepth = i;
+        break;
+      }
+    }
+
+    if (cutDepth === -1) {
+      this.updateUndoBtn();
+      return;
+    }
+
     // Save state before cut for undo
     this.cutHistory.push({
-      wholePizzas: this.state.wholePizzas,
-      slices: this.state.slices,
-      bits: this.state.bits,
-      crumbs: this.state.crumbs,
-      specks: this.state.specks,
+      pieces: this.state.pieces.slice(),
     });
 
-    if (this.state.wholePizzas > 0) {
-      this.state.phase = 'ANIMATING';
-      Input.enabled = false;
-      this.state.slices += this.state.wholePizzas * 10;
-      this.state.wholePizzas = 0;
-      Sound.slice();
-      Render.animateCut(this.state, 'pizza').then(() => {
-        this.updateUndoBtn();
-        this.afterAnimating();
-      });
-    } else if (this.state.slices > 0) {
-      this.state.phase = 'ANIMATING';
-      Input.enabled = false;
-      this.state.bits += this.state.slices * 10;
-      this.state.slices = 0;
-      Sound.slice();
-      Render.animateCut(this.state, 'slice').then(() => {
-        this.updateUndoBtn();
-        this.afterAnimating();
-      });
-    } else if (this.state.bits > 0) {
-      this.state.phase = 'ANIMATING';
-      Input.enabled = false;
-      this.state.crumbs += this.state.bits * 10;
-      this.state.bits = 0;
-      Sound.slice();
-      Render.animateCut(this.state, 'bit').then(() => {
-        this.updateUndoBtn();
-        this.afterAnimating();
-      });
-    } else if (this.state.crumbs > 0) {
-      this.state.phase = 'ANIMATING';
-      Input.enabled = false;
-      this.state.specks += this.state.crumbs * 10;
-      this.state.crumbs = 0;
-      Sound.slice();
-      Render.animateCut(this.state, 'crumb').then(() => {
-        this.updateUndoBtn();
-        this.afterAnimating();
-      });
-    } else {
-      // Nothing to cut — remove the history entry we just pushed
-      this.cutHistory.pop();
+    this.state.phase = 'ANIMATING';
+    Input.enabled = false;
+
+    const count = this.state.pieces[cutDepth];
+    const divisor = this.state.divisor;
+    const factors = this.primeFactors(divisor);
+
+    // Update state: move pieces from cutDepth to cutDepth+1
+    this.state.pieces[cutDepth] = 0;
+    this.state.pieces[cutDepth + 1] += count * divisor;
+
+    Sound.slice();
+    Render.animateMultiStepCut(this.state, cutDepth, factors, count).then(() => {
       this.updateUndoBtn();
-    }
+      this.afterAnimating();
+    });
   },
 
   handleDistribute() {
     // Track swipe timestamps for fast mode
     const now = Date.now();
     this.distributeTimes.push(now);
-    // Keep only last 1.5s
     this.distributeTimes = this.distributeTimes.filter(t => now - t < 1500);
     if (this.distributeTimes.length >= 3) {
       this.fastMode = true;
     }
 
-    // Hide undo on first distribute
     if (!this.hasDistributed) {
       Render.hideUndoBtn();
     }
 
-    // Queue distribute if already animating
     if (this.state.phase === 'ANIMATING') {
       this.distributeQueued++;
       Sound.tick();
@@ -210,7 +209,7 @@ const Game = {
     this.hasDistributed = true;
     Render.hideUndoBtn();
 
-    const available = this.state.wholePizzas + this.state.slices + this.state.bits + this.state.crumbs + this.state.specks;
+    const available = this.totalPieces();
     if (available === 0) return;
 
     this.state.phase = 'ANIMATING';
@@ -218,29 +217,19 @@ const Game = {
 
     const toDistribute = Math.min(available, this.state.mice);
 
+    // Take pieces from shallowest depth first
     let remaining = toDistribute;
-    let fromWhole = Math.min(this.state.wholePizzas, remaining);
-    remaining -= fromWhole;
-    let fromSlice = Math.min(this.state.slices, remaining);
-    remaining -= fromSlice;
-    let fromBits = Math.min(this.state.bits, remaining);
-    remaining -= fromBits;
-    let fromCrumbs = Math.min(this.state.crumbs, remaining);
-    remaining -= fromCrumbs;
-    let fromSpecks = Math.min(this.state.specks, remaining);
-
-    this.state.wholePizzas -= fromWhole;
-    this.state.slices -= fromSlice;
-    this.state.bits -= fromBits;
-    this.state.crumbs -= fromCrumbs;
-    this.state.specks -= fromSpecks;
+    for (let i = 0; i < this.state.pieces.length && remaining > 0; i++) {
+      const take = Math.min(this.state.pieces[i], remaining);
+      this.state.pieces[i] -= take;
+      remaining -= take;
+    }
 
     const isPartialRound = toDistribute < this.state.mice;
     const pieceDelay = this.fastMode ? 30 : 150;
 
     Render.animateDistributeRound(this.state, toDistribute, isPartialRound, () => Sound.munch(), pieceDelay).then(() => {
       if (isPartialRound) {
-        // Check if remainder is only specks (can't cut further) — auto-dismiss
         if (this.hasUndistributableRemainder()) {
           this.autoDismissRemainder();
           return;
@@ -275,16 +264,29 @@ const Game = {
     });
   },
 
+  totalPieces() {
+    return this.state.pieces.reduce((s, p) => s + p, 0);
+  },
+
   noPiecesLeft() {
-    return this.state.wholePizzas === 0 && this.state.slices === 0 &&
-           this.state.bits === 0 && this.state.crumbs === 0 && this.state.specks === 0;
+    return this.state.pieces.every(p => p === 0);
+  },
+
+  // Check if only the deepest level has pieces and they can't fill a round
+  hasUndistributableRemainder() {
+    const maxDepth = this.state.pieces.length - 1;
+    // Has pieces only at the deepest level and count < mice
+    const deepestOnly = this.state.pieces.slice(0, maxDepth).every(p => p === 0);
+    return deepestOnly && this.state.pieces[maxDepth] > 0 && this.state.pieces[maxDepth] < this.state.mice;
   },
 
   autoDismissRemainder() {
-    // Animate remaining specks off screen, then complete the level
     Sound.sparkle();
     Render.animateDismissRemainder(this.state).then(() => {
-      this.state.specks = 0;
+      // Clear all pieces
+      for (let i = 0; i < this.state.pieces.length; i++) {
+        this.state.pieces[i] = 0;
+      }
       this.distributeQueued = 0;
       this.state.phase = 'LEVEL_COMPLETE';
       Input.enabled = true;
@@ -306,20 +308,12 @@ const Game = {
     }
   },
 
-  // Check if only specks remain and they can't fill a round for all mice
-  hasUndistributableRemainder() {
-    return this.state.specks > 0 && this.state.specks < this.state.mice &&
-           this.state.wholePizzas === 0 && this.state.slices === 0 &&
-           this.state.bits === 0 && this.state.crumbs === 0;
-  },
-
   checkCompletion() {
     if (this.noPiecesLeft()) {
       this.state.phase = 'LEVEL_COMPLETE';
       Input.enabled = true;
       Render.showCelebration(this.state);
     } else if (this.hasDistributed && this.hasUndistributableRemainder()) {
-      // Last possible cut done, remainder too small — auto-dismiss
       this.autoDismissRemainder();
     } else {
       this.state.phase = 'READY';
