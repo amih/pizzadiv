@@ -329,6 +329,29 @@ const Sketch = {
     });
   },
 
+  // --- Dismiss remaining sketch pieces to the right ---
+
+  animateDismissRemaining() {
+    if (!this._active || !this._svg) return Promise.resolve();
+    const groups = Array.from(this._svg.querySelectorAll('.sketch-piece'));
+    if (groups.length === 0) return Promise.resolve();
+
+    return new Promise((resolve) => {
+      groups.forEach((group, i) => {
+        setTimeout(() => {
+          group.style.transformBox = 'fill-box';
+          group.style.transformOrigin = 'center';
+          group.style.transition = 'transform 0.5s ease-in, opacity 0.3s ease 0.2s';
+          group.getBoundingClientRect();
+          group.style.transform = 'translateX(120vw)';
+          group.style.opacity = '0';
+          setTimeout(() => { if (group.parentNode) group.remove(); }, 550);
+        }, i * 30);
+      });
+      setTimeout(resolve, groups.length * 30 + 550);
+    });
+  },
+
   // --- Cut line animation on sketch SVG ---
 
   drawCutLines(cutDepth, divisor) {

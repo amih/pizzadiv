@@ -243,8 +243,6 @@ const Game = {
       // Remove distributed pieces, keep remaining in place
       Render.cleanupDistributed();
 
-      // Animate remaining pieces out to the right, then proceed
-      const hasRemaining = document.querySelector('#pizza-area .piece:not(.distributed), #pizza-area .pizza:not(.distributed)');
       const afterDismiss = () => {
         Render.drawPizzas(this.state);
         if (isPartialRound) {
@@ -276,8 +274,9 @@ const Game = {
         }
       };
 
-      if (hasRemaining) {
-        Render.animateDismissRemainder(this.state).then(afterDismiss);
+      // Animate remaining sketch pieces out to the right
+      if (this.totalPieces() > 0) {
+        Sketch.animateDismissRemaining().then(afterDismiss);
       } else {
         afterDismiss();
       }
