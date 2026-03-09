@@ -243,42 +243,30 @@ const Game = {
       // Remove distributed pieces, keep remaining in place
       Render.cleanupDistributed();
 
-      const afterDismiss = () => {
-        Render.drawPizzas(this.state);
-        if (isPartialRound) {
-          this.distributeQueued = 0;
-          this.state.phase = 'LEVEL_FAILED';
-          Input.enabled = true;
-          Sound.cry();
-          this.lives--;
-          this.saveLives();
-          Render.updateLives(this.lives);
-          if (this.lives <= 0) {
-            Render.showGameOver();
-          } else {
-            Render.showFailure();
-          }
-        } else if (this.distributeQueued > 0) {
-          if (this.noPiecesLeft()) {
-            this.distributeQueued = 0;
-            this.state.phase = 'LEVEL_COMPLETE';
-            Input.enabled = true;
-            Render.showCelebration(this.state);
-          } else {
-            this.state.phase = 'READY';
-            Input.enabled = true;
-            this.executeDistribute();
-          }
+      if (isPartialRound) {
+        this.distributeQueued = 0;
+        this.state.phase = 'LEVEL_FAILED';
+        Input.enabled = true;
+        Sound.cry();
+        this.lives--;
+        this.saveLives();
+        Render.updateLives(this.lives);
+        if (this.lives <= 0) {
+          Render.showGameOver();
         } else {
-          this.checkCompletion();
+          Render.showFailure();
         }
-      };
-
-      // Animate remaining sketch pieces out to the right
-      if (this.totalPieces() > 0) {
-        Sketch.animateDismissRemaining().then(afterDismiss);
+      } else if (this.distributeQueued > 0) {
+        if (this.noPiecesLeft()) {
+          this.distributeQueued = 0;
+          this.showCelebrationWithDismiss();
+        } else {
+          this.state.phase = 'READY';
+          Input.enabled = true;
+          this.executeDistribute();
+        }
       } else {
-        afterDismiss();
+        this.checkCompletion();
       }
     });
   },
@@ -328,11 +316,17 @@ const Game = {
     }
   },
 
-  checkCompletion() {
-    if (this.noPiecesLeft()) {
+  showCelebrationWithDismiss() {
+    Sketch.animateDismissRemaining().then(() => {
       this.state.phase = 'LEVEL_COMPLETE';
       Input.enabled = true;
       Render.showCelebration(this.state);
+    });
+  },
+
+  checkCompletion() {
+    if (this.noPiecesLeft()) {
+      this.showCelebrationWithDismiss();
     } else if (this.hasDistributed && this.hasUndistributableRemainder()) {
       this.autoDismissRemainder();
     } else {
