@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pizzadiv-v2.3.0';
+const CACHE_NAME = 'pizzadiv-v2.4.7';
 const ASSETS = [
   './',
   './index.html',

@@ -14,7 +14,6 @@ const Game = {
     await this.loadLevelsData();
     const saved = localStorage.getItem('pizzadiv_level');
     const startLevel = saved ? parseInt(saved, 10) : 1;
-    this.loadLevel(startLevel);
     Input.init();
     Input.onCut = () => this.handleCut();
     Input.onDistribute = () => this.handleDistribute();
@@ -25,6 +24,8 @@ const Game = {
       e.stopPropagation();
       this.handleUndo();
     });
+
+    this.loadLevel(startLevel);
   },
 
   async loadLevelsData() {
@@ -56,12 +57,14 @@ const Game = {
     localStorage.setItem('pizzadiv_level', num);
   },
 
-  loadLevel(num) {
+  async loadLevel(num) {
     const idx = num - 1;
     if (idx >= this.levels.length) {
       return this.loadLevel(this.levels.length);
     }
     if (num < 1) num = 1;
+
+    Sketch.cancel();
 
     const def = this.levels[idx];
     this.distributeQueued = 0;
@@ -75,7 +78,7 @@ const Game = {
       divisor: def.divisor,
       pieces: [def.pizzas, 0, 0, 0, 0], // depth 0=whole, 1-4=subdivisions
       mice: def.mice,
-      phase: 'READY',
+      phase: 'SKETCHING',
     };
 
     this.saveLevel(num);
@@ -84,7 +87,11 @@ const Game = {
     Render.hideGameOver();
     Render.hideUndoBtn();
     Render.updateLives(this.lives);
-    Render.drawState(this.state);
+
+    Input.enabled = false;
+    await Sketch.playIntro(this.state);
+    this.state.phase = 'READY';
+    Input.enabled = true;
   },
 
   resetToLevel1() {
@@ -172,6 +179,7 @@ const Game = {
     this.state.pieces[cutDepth + 1] += count * divisor;
 
     Sound.slice();
+    Sketch.drawCutLines(cutDepth, divisor);
     Render.animateMultiStepCut(this.state, cutDepth, factors, count).then(() => {
       this.updateUndoBtn();
       this.afterAnimating();
@@ -228,38 +236,50 @@ const Game = {
     const isPartialRound = toDistribute < this.state.mice;
     const pieceDelay = this.fastMode ? 30 : 150;
 
+    // Start sketch distribute animation in parallel
+    Sketch.animateDistribute(toDistribute, pieceDelay);
+
     Render.animateDistributeRound(this.state, toDistribute, isPartialRound, () => Sound.munch(), pieceDelay).then(() => {
-      if (isPartialRound) {
-        if (this.hasUndistributableRemainder()) {
-          this.autoDismissRemainder();
-          return;
-        }
-        this.distributeQueued = 0;
-        this.state.phase = 'LEVEL_FAILED';
-        Input.enabled = true;
-        Sound.cry();
-        this.lives--;
-        this.saveLives();
-        Render.updateLives(this.lives);
-        if (this.lives <= 0) {
-          Render.showGameOver();
-        } else {
-          Render.showFailure();
-        }
-      } else if (this.distributeQueued > 0) {
-        const noPiecesLeft = this.noPiecesLeft();
-        if (noPiecesLeft) {
+      // Remove distributed pieces, keep remaining in place
+      Render.cleanupDistributed();
+
+      // Animate remaining pieces out to the right, then proceed
+      const hasRemaining = document.querySelector('#pizza-area .piece:not(.distributed), #pizza-area .pizza:not(.distributed)');
+      const afterDismiss = () => {
+        Render.drawPizzas(this.state);
+        if (isPartialRound) {
           this.distributeQueued = 0;
-          this.state.phase = 'LEVEL_COMPLETE';
+          this.state.phase = 'LEVEL_FAILED';
           Input.enabled = true;
-          Render.showCelebration(this.state);
+          Sound.cry();
+          this.lives--;
+          this.saveLives();
+          Render.updateLives(this.lives);
+          if (this.lives <= 0) {
+            Render.showGameOver();
+          } else {
+            Render.showFailure();
+          }
+        } else if (this.distributeQueued > 0) {
+          if (this.noPiecesLeft()) {
+            this.distributeQueued = 0;
+            this.state.phase = 'LEVEL_COMPLETE';
+            Input.enabled = true;
+            Render.showCelebration(this.state);
+          } else {
+            this.state.phase = 'READY';
+            Input.enabled = true;
+            this.executeDistribute();
+          }
         } else {
-          this.state.phase = 'READY';
-          Input.enabled = true;
-          this.executeDistribute();
+          this.checkCompletion();
         }
+      };
+
+      if (hasRemaining) {
+        Render.animateDismissRemainder(this.state).then(afterDismiss);
       } else {
-        this.checkCompletion();
+        afterDismiss();
       }
     });
   },
@@ -287,6 +307,7 @@ const Game = {
       for (let i = 0; i < this.state.pieces.length; i++) {
         this.state.pieces[i] = 0;
       }
+      Render.drawPizzas(this.state);
       this.distributeQueued = 0;
       this.state.phase = 'LEVEL_COMPLETE';
       Input.enabled = true;
@@ -322,6 +343,7 @@ const Game = {
   },
 
   handleGiveUp() {
+    if (this.state.phase === 'SKETCHING') return;
     if (this.state.phase === 'ANIMATING') return;
     if (this.state.phase === 'LEVEL_COMPLETE') return;
     if (this.state.phase === 'LEVEL_FAILED') return;

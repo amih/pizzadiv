@@ -12,52 +12,68 @@ const Sound = {
     if (this.ctx.state === 'suspended') this.ctx.resume();
   },
 
-  // Knife slicing through pizza — soft swoosh
+  // Knife cutting paper — crisp scratchy snip
   slice() {
     this.ensure();
     const ctx = this.ctx;
     const now = ctx.currentTime;
 
-    // Filtered noise swoosh — the main slicing texture
-    const bufferSize = ctx.sampleRate * 0.25;
+    // High-frequency noise burst — the paper tearing texture
+    const bufferSize = ctx.sampleRate * 0.15;
     const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const data = noiseBuffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) {
-      data[i] = (Math.random() * 2 - 1);
+      // Crinkly texture: mix of noise with occasional sharp spikes
+      data[i] = (Math.random() * 2 - 1) * (1 + 0.3 * Math.sin(i * 0.15));
     }
     const noise = ctx.createBufferSource();
     noise.buffer = noiseBuffer;
 
-    // Bandpass sweeps down for a natural cutting feel
+    // Highpass keeps it papery and thin
+    const highpass = ctx.createBiquadFilter();
+    highpass.type = 'highpass';
+    highpass.frequency.setValueAtTime(3000, now);
+    highpass.Q.value = 0.7;
+
+    // Bandpass for the main "scritch" character
     const bandpass = ctx.createBiquadFilter();
     bandpass.type = 'bandpass';
-    bandpass.frequency.setValueAtTime(2000, now);
-    bandpass.frequency.exponentialRampToValueAtTime(600, now + 0.2);
-    bandpass.Q.value = 1.5;
+    bandpass.frequency.setValueAtTime(5000, now);
+    bandpass.frequency.exponentialRampToValueAtTime(3500, now + 0.12);
+    bandpass.Q.value = 1.2;
 
     const noiseGain = ctx.createGain();
-    noiseGain.gain.setValueAtTime(0.18, now);
-    noiseGain.gain.setValueAtTime(0.2, now + 0.03);
-    noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+    noiseGain.gain.setValueAtTime(0.001, now);
+    noiseGain.gain.linearRampToValueAtTime(0.22, now + 0.01);
+    noiseGain.gain.setValueAtTime(0.2, now + 0.04);
+    noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
 
-    // Soft thud at the end — knife hitting the board
-    const thud = ctx.createOscillator();
-    thud.type = 'sine';
-    thud.frequency.setValueAtTime(120, now + 0.08);
-    thud.frequency.exponentialRampToValueAtTime(60, now + 0.18);
+    // Second shorter burst for the "snip" finish
+    const buf2Size = ctx.sampleRate * 0.04;
+    const buf2 = ctx.createBuffer(1, buf2Size, ctx.sampleRate);
+    const d2 = buf2.getChannelData(0);
+    for (let i = 0; i < buf2Size; i++) {
+      d2[i] = (Math.random() * 2 - 1);
+    }
+    const snip = ctx.createBufferSource();
+    snip.buffer = buf2;
 
-    const thudGain = ctx.createGain();
-    thudGain.gain.setValueAtTime(0.001, now);
-    thudGain.gain.setValueAtTime(0.1, now + 0.08);
-    thudGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+    const snipBP = ctx.createBiquadFilter();
+    snipBP.type = 'bandpass';
+    snipBP.frequency.value = 6000;
+    snipBP.Q.value = 2;
 
-    noise.connect(bandpass).connect(noiseGain).connect(ctx.destination);
-    thud.connect(thudGain).connect(ctx.destination);
+    const snipGain = ctx.createGain();
+    snipGain.gain.setValueAtTime(0.15, now + 0.08);
+    snipGain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+
+    noise.connect(highpass).connect(bandpass).connect(noiseGain).connect(ctx.destination);
+    snip.connect(snipBP).connect(snipGain).connect(ctx.destination);
 
     noise.start(now);
-    noise.stop(now + 0.25);
-    thud.start(now + 0.08);
-    thud.stop(now + 0.2);
+    noise.stop(now + 0.15);
+    snip.start(now + 0.08);
+    snip.stop(now + 0.12);
   },
 
   // Munching — short "nom nom" chewing sound

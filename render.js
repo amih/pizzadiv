@@ -13,7 +13,7 @@ const Render = {
   undoBtn: document.getElementById('undo-btn'),
 
   // Piece sizes by depth (px)
-  PIECE_SIZES: [120, 40, 15, 8, 4],
+  PIECE_SIZES: [180, 70, 32, 18, 10],
   PIECE_LABELS: ['whole', 'piece', 'bit', 'crumb', 'speck'],
 
   drawState(state) {
@@ -63,9 +63,9 @@ const Render = {
       if (state.pieces[0] > 1) {
         const stack = document.createElement('div');
         stack.className = 'pizza-stack';
-        const offset = 8 * (state.pieces[0] - 1);
-        stack.style.width = `calc(120px + ${offset}px)`;
-        stack.style.height = `calc(120px + ${offset}px)`;
+        const offset = 10 * (state.pieces[0] - 1);
+        stack.style.width = `calc(180px + ${offset}px)`;
+        stack.style.height = `calc(180px + ${offset}px)`;
         for (let i = state.pieces[0] - 1; i >= 0; i--) {
           const pizza = document.createElement('div');
           pizza.className = 'pizza';
@@ -98,6 +98,7 @@ const Render = {
         this.pizzaArea.appendChild(this.createPieceGroup(remainder, depth, state.divisor));
       }
     }
+    if (Sketch._active) Sketch.refresh(state);
   },
 
   createPieceGroup(count, depth, divisor) {
@@ -105,9 +106,9 @@ const Render = {
     group.className = 'piece-group';
     group.dataset.depth = depth;
 
-    const size = this.PIECE_SIZES[depth] || 4;
+    const size = this.PIECE_SIZES[depth] || 10;
     // Set group size based on depth
-    const groupSize = depth === 1 ? 120 : (depth === 2 ? 80 : (depth === 3 ? 60 : 50));
+    const groupSize = depth === 1 ? 180 : (depth === 2 ? 120 : (depth === 3 ? 80 : 70));
     group.style.width = groupSize + 'px';
     group.style.height = groupSize + 'px';
     group.style.position = 'relative';
@@ -164,6 +165,7 @@ const Render = {
     if (mouseCount > 0) {
       applyPattern(this.mouseTray, mouseCount, 44);
     }
+    if (Sketch._active) Sketch.refresh(state);
   },
 
   nudgeMice() {
@@ -284,6 +286,19 @@ const Render = {
       }
 
       if (toDistribute === 0) resolve();
+    });
+  },
+
+  cleanupDistributed() {
+    // Remove distributed pieces, leave remaining in place
+    this.pizzaArea.querySelectorAll('.distributed').forEach((el) => el.remove());
+    // Remove empty piece-groups
+    this.pizzaArea.querySelectorAll('.piece-group').forEach((g) => {
+      if (g.querySelectorAll('.piece:not(.distributed)').length === 0) g.remove();
+    });
+    // Remove empty stacks
+    this.pizzaArea.querySelectorAll('.pizza-stack').forEach((s) => {
+      if (s.querySelectorAll('.pizza:not(.distributed)').length === 0) s.remove();
     });
   },
 

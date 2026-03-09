@@ -355,8 +355,8 @@ body {
 
 /* Pizza */
 .pizza {
-  width: 120px;
-  height: 120px;
+  width: 180px;
+  height: 180px;
   background: var(--pizza-cheese);
   border: 4px solid var(--pizza-crust);
   border-radius: 12px;
@@ -394,8 +394,8 @@ body {
 /* Pizza stack — diagonal offset for multiple whole pizzas */
 .pizza-stack {
   position: relative;
-  width: 120px;
-  height: 120px;
+  width: 180px;
+  height: 180px;
 }
 
 .pizza-stack .pizza {
@@ -419,8 +419,8 @@ body {
 }
 
 .piece.depth-1 {
-  width: 40px;
-  height: 40px;
+  width: 70px;
+  height: 70px;
   border-radius: 6px;
   border-width: 2px;
 }
@@ -435,23 +435,23 @@ body {
 }
 
 .piece.depth-2 {
-  width: 15px;
-  height: 15px;
+  width: 32px;
+  height: 32px;
   border-radius: 3px;
   border-width: 1.5px;
 }
 
 .piece.depth-3 {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  border-radius: 2px;
   border-width: 1px;
 }
 
 .piece.depth-4 {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 1px;
   border-width: 0.5px;
 }
 
@@ -539,8 +539,8 @@ body {
 
 /* Dismiss remainder animation */
 @keyframes dismiss-fly {
-  0% { transform: translateY(0) scale(1); opacity: 1; }
-  100% { transform: translateY(-80px) scale(0.2); opacity: 0; }
+  0% { transform: translateX(0) scale(1); opacity: 1; }
+  100% { transform: translateX(120vw) scale(0.7); opacity: 0; }
 }
 
 .dismissing {
@@ -750,7 +750,7 @@ body {
 #failure {
   position: absolute;
   inset: 0;
-  background: rgba(255, 240, 240, 0.92);
+  background: #FFF0F0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -796,7 +796,7 @@ body {
 #celebration {
   position: absolute;
   inset: 0;
-  background: rgba(255, 248, 240, 0.92);
+  background: #FFF8F0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -873,7 +873,7 @@ body {
 #game-over {
   position: absolute;
   inset: 0;
-  background: rgba(255, 240, 240, 0.92);
+  background: #FFF0F0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1019,7 +1019,7 @@ body {
   height: 5px;
   background: var(--pizza-cheese);
   border: 1px solid var(--pizza-crust);
-  border-radius: 50%;
+  border-radius: 1px;
 }
 
 .mini-piece.depth-4 {
@@ -1027,7 +1027,7 @@ body {
   height: 3px;
   background: var(--pizza-cheese);
   border: 0.5px solid var(--pizza-crust);
-  border-radius: 50%;
+  border-radius: 1px;
 }
 
 /* Mini mouse in fraction */
@@ -1059,16 +1059,27 @@ body {
   border-radius: 50% 50% 45% 45%;
 }
 
+/* Sketch intro animation */
+.sketch-svg { position: absolute; inset: 0; z-index: 50; pointer-events: none; transition: opacity 0.2s; overflow: visible; }
+.sketch-svg.fading { opacity: 0; }
+.sketch-hidden { opacity: 0 !important; transition: opacity 0.2s ease !important; }
+@keyframes sketch-draw { to { stroke-dashoffset: 0; } }
+.sketch-path {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  animation: sketch-draw var(--draw-duration) var(--draw-delay) ease-out forwards;
+}
+
 /* Responsive */
 @media (max-width: 400px) {
   .pizza {
-    width: 90px;
-    height: 90px;
+    width: 150px;
+    height: 150px;
   }
 
   .pizza-stack {
-    width: 90px;
-    height: 90px;
+    width: 150px;
+    height: 150px;
   }
 
   .mouse {
@@ -1097,12 +1108,12 @@ body {
 
 @media (min-width: 601px) {
   .pizza {
-    width: 140px;
-    height: 140px;
+    width: 220px;
+    height: 220px;
   }
 
   .pizza-stack {
-    width: 140px;
-    height: 140px;
+    width: 220px;
+    height: 220px;
   }
 }
