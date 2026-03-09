@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pizzadiv-v2.0.9';
+const CACHE_NAME = 'pizzadiv-v2.3.0';
 const ASSETS = [
   './',
   './index.html',
@@ -7,6 +7,7 @@ const ASSETS = [
   './game.js',
   './input.js',
   './render.js',
+  './sketch.js',
   './patterns.js',
   './levels.json',
   './sound.js',
